@@ -7,7 +7,7 @@
 ## 基本介绍
 
 1. 本工程是libuv及其C示例的构建工程，用于运行调试
-2. 所有libuv源码来自libuv官方[https://libuv.org/]
+2. 所有libuv源码来自[libuv官方](https://libuv.org/)1.31.0版本
 3. 仅保留Mac/Linux/Win三个平台的源码，去除了其他平台特定代码（为了足够简单）
 4. 增加了源码注释，支持Debug/Release编译模式
 5. 整个工程PC端编译构建采用cmake来管理，支持跨平台（可以在树莓派上正常cmake+make）
