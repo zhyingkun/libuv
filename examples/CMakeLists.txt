@@ -65,7 +65,7 @@ if(NOT WIN32)
 	target_link_libraries(uvwget libuv curl)
 	set_target_properties(uvwget PROPERTIES FOLDER "examples")
 
-	set(ONLY_MAIN_C_NOT_WIN interfaces progress queue-cancel signal thread-create tty 
+	set(ONLY_MAIN_C_NOT_WIN interfaces progress queue-work queue-cancel signal thread-create tty 
 	tty-gravity udp-dhcp uvcat uvtee)
 	foreach(DEMO_DIR ${ONLY_MAIN_C_NOT_WIN})
 		source_group(src FILES ./${DEMO_DIR}/main.c)
@@ -87,7 +87,7 @@ set_target_properties(plugin PROPERTIES FOLDER "examples/plugin")
 # set_target_properties(hello PROPERTIES FOLDER "examples/plugin")
 
 set(ONLY_MAIN_C_DEMO detach dns helloworld idle-basic idle-compute locks onchange 
-	pipe-echo-server queue-work ref-timer spawn tcp-echo-server uvstop)
+	pipe-echo-server ref-timer spawn tcp-echo-server uvstop)
 foreach(DEMO_DIR ${ONLY_MAIN_C_DEMO})
 	source_group(src FILES ./${DEMO_DIR}/main.c)
 	add_executable(${DEMO_DIR} ./${DEMO_DIR}/main.c)
