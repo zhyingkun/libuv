@@ -6,7 +6,7 @@
 
 ## 基本介绍
 
-1. 本工程是libuv及其C扩展的构建工程，用于运行调试
+1. 本工程是libuv及其C示例的构建工程，用于运行调试
 2. 所有libuv源码来自libuv官方[https://libuv.org/]
 3. 仅保留Mac/Linux/Win三个平台的源码，去除了其他平台特定代码（为了足够简单）
 4. 增加了源码注释，支持Debug/Release编译模式
