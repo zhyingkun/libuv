@@ -65,8 +65,8 @@ target_link_libraries(proc-streams libuv)
 set_target_properties(proc-streams PROPERTIES FOLDER "examples/proc-streams")
 set(TEST_SRC ./proc-streams/test.c)
 source_group(src FILES ${TEST_SRC})
-add_executable(test ${TEST_SRC})
-set_target_properties(test PROPERTIES FOLDER "examples/proc-streams")
+add_executable(stream-test ${TEST_SRC})
+set_target_properties(stream-test PROPERTIES FOLDER "examples/proc-streams")
 
 set(ONLY_MAIN_C_DEMO detach dns helloworld idle-basic idle-compute interfaces locks onchange 
 	pipe-echo-server progress queue-cancel queue-work ref-timer signal spawn tcp-echo-server 
