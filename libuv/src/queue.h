@@ -18,9 +18,12 @@
 
 #include <stddef.h>
 
+// QUEUE is an array, with 2 void* element
 typedef void *QUEUE[2];
 
 /* Private macros. */
+// type of q is QUEUE*, type of QUEUE_NEXT(q) is QUEUE* with location value
+// QUEUE must be implemented with macros, Not function
 #define QUEUE_NEXT(q)       (*(QUEUE **) &((*(q))[0]))
 #define QUEUE_PREV(q)       (*(QUEUE **) &((*(q))[1]))
 #define QUEUE_PREV_NEXT(q)  (QUEUE_NEXT(QUEUE_PREV(q)))

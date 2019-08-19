@@ -28,8 +28,26 @@ UV_UNUSED(static void cpu_relax(void));
 /* Prefer hand-rolled assembly over the gcc builtins because the latter also
  * issue full memory barriers.
  */
+// int cmpxchgi(int* ptr, int oldval, int newval){
+//   if (*ptr == oldval){
+//     *ptr = newval;
+//     return oldval;
+//   }
+//   return *ptr;
+// }
 UV_UNUSED(static int cmpxchgi(int* ptr, int oldval, int newval)) {
 #if defined(__i386__) || defined(__x86_64__)
+  // 0 ==> eax, out, oldval
+  // 1 ==> mem, *ptr
+  // 2 ==> reg, newval
+  // AT&T: cmpxchg X, Y; ==> if(Y==eax){Y=X;}else{eax=Y;}
+  // AT&T: "Instruction":"=OutputReg"(var):"InputReg"(var):"ModifyReg"
+  // For Output:
+  // "=a"(out) ==> eax is a output reg, bind with varilable 'out'
+  // "+m"(*ptr) ==> + for output and input, m means memory, bind with '*ptr'
+  // For Input:
+  // "r"(newval) ==> register as input, bind with varilable 'newval'
+  // "0"(oldval) ==> make zero index var has initial value: 'oldval'
   int out;
   __asm__ __volatile__ ("lock; cmpxchg %2, %1;"
                         : "=a" (out), "+m" (*(volatile int*) ptr)

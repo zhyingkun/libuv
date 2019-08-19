@@ -41,6 +41,7 @@ static QUEUE exit_message;
 static QUEUE wq;
 static QUEUE run_slow_work_message;
 static QUEUE slow_io_pending_wq;
+// mutex protect idle_threads,slow_io_work_running,exit_message,wq,run_slow_work_message,slow_io_pending_wq
 
 static unsigned int slow_work_thread_threshold(void) {
   return (nthreads + 1) / 2;
@@ -54,6 +55,7 @@ static void uv__cancelled(struct uv__work* w) {
 /* To avoid deadlock with uv_cancel() it's crucial that the worker
  * never holds the global mutex and the loop-local mutex at the same time.
  */
+// global mutex means mutex, loop-local mutex means w->loop->wq_mutex
 static void worker(void* arg) {
   struct uv__work* w;
   QUEUE* q;
@@ -72,6 +74,10 @@ static void worker(void* arg) {
            (QUEUE_HEAD(&wq) == &run_slow_work_message &&
             QUEUE_NEXT(&run_slow_work_message) == &wq &&
             slow_io_work_running >= slow_work_thread_threshold())) {
+      // must use while, not if,
+      // 1. cond and mutex may not be one to one, may be one thread only use mutex
+      // 2. cond means possibility, not certainty
+      // 3. may be spurious wake up
       idle_threads += 1;
       uv_cond_wait(&cond, &mutex);
       idle_threads -= 1;

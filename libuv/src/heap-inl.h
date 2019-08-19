@@ -119,6 +119,7 @@ HEAP_EXPORT(void heap_insert(struct heap* heap,
   /* Calculate the path from the root to the insertion point.  This is a min
    * heap so we always insert at the left-most free node of the bottom row.
    */
+  // all left node indexes are even, all right node indexes are odd
   path = 0;
   for (k = 0, n = 1 + heap->nelts; n >= 2; k += 1, n /= 2)
     path = (path << 1) | (n & 1);
