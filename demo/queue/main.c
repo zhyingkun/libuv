@@ -26,6 +26,8 @@ typedef struct User {
 } User;
 
 int main() {
+  printf("sizeof(QUEUE): %lu\n", sizeof(QUEUE));
+
   QUEUE queue;
 
   User john;
@@ -82,6 +84,7 @@ int main() {
   QUEUE_SPLIT(&queue2, &mary.node, &queue);
   QUEUE qu;
   QUEUE_MOVE(&queue, &qu);
+  printf("Is queue empty: %d\n", QUEUE_EMPTY(&queue));
   QUEUE_FOREACH(q, &qu) {
     user = QUEUE_DATA(q, User, node);
     printf("Rest User: %s who is %d.\n", user->name, user->age);
