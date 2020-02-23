@@ -17,6 +17,7 @@ uv_pipe_t stdout_pipe;
 uv_pipe_t file_pipe;
 
 void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
+  (void)handle;
   *buf = uv_buf_init((char*)malloc(suggested_size), suggested_size);
 }
 
@@ -27,10 +28,12 @@ void free_write_req(uv_write_t* req) {
 }
 
 void on_stdout_write(uv_write_t* req, int status) {
+  (void)status;
   free_write_req(req);
 }
 
 void on_file_write(uv_write_t* req, int status) {
+  (void)status;
   free_write_req(req);
 }
 
@@ -42,6 +45,7 @@ void write_data(uv_stream_t* dest, size_t size, uv_buf_t buf, uv_write_cb cb) {
 }
 
 void read_stdin(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
+  (void)stream;
   if (nread < 0) {
     if (nread == UV_EOF) {
       // end of file
@@ -60,6 +64,7 @@ void read_stdin(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
 }
 
 int main(int argc, char** argv) {
+  (void)argc;
   loop = uv_default_loop();
 
   uv_pipe_init(loop, &stdin_pipe, 0);
