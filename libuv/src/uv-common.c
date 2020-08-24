@@ -152,6 +152,9 @@ uv_buf_t uv_buf_init(char* base, unsigned int len) {
 
 
 static const char* uv__unknown_err_code(int err) {
+  (void)err;
+  return "Unknown system error";
+/*
   char buf[32];
   char* copy;
 
@@ -159,6 +162,7 @@ static const char* uv__unknown_err_code(int err) {
   copy = uv__strdup(buf);
 
   return copy != NULL ? copy : "Unknown system error";
+*/
 }
 
 #define UV_ERR_NAME_GEN_R(name, _) \
