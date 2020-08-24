@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _WIN32
 #include <pthread.h>
+#endif
 #include <uv.h>
 
 #define DEFAULT_PORT 7000
@@ -9,7 +11,9 @@
 
 uv_loop_t* loop;
 struct sockaddr_in addr;
+#ifndef _WIN32
 pthread_t mainThread;
+#endif
 
 typedef struct {
   uv_write_t req;
@@ -17,38 +21,38 @@ typedef struct {
 } write_req_t;
 
 void free_write_req(uv_write_t* req) {
+#ifndef _WIN32
   pthread_t fibThread = pthread_self();
-  printf(
-      "free_write_req: %p, equal main thread: %s\n", fibThread, pthread_equal(fibThread, mainThread) ? "YES" : "NO");
-
+  printf("free_write_req: %p, equal main thread: %s\n", fibThread, pthread_equal(fibThread, mainThread) ? "YES" : "NO");
+#endif
   write_req_t* wr = (write_req_t*)req;
   free(wr->buf.base);
   free(wr);
 }
 
 void alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
+#ifndef _WIN32
   pthread_t fibThread = pthread_self();
-  printf(
-      "alloc_buffer: %p, equal main thread: %s\n", fibThread, pthread_equal(fibThread, mainThread) ? "YES" : "NO");
-
+  printf("alloc_buffer: %p, equal main thread: %s\n", fibThread, pthread_equal(fibThread, mainThread) ? "YES" : "NO");
+#endif
   (void)handle;
   buf->base = (char*)malloc(suggested_size);
   buf->len = suggested_size;
 }
 
 void on_close(uv_handle_t* handle) {
+#ifndef _WIN32
   pthread_t fibThread = pthread_self();
-  printf(
-      "on_close: %p, equal main thread: %s\n", fibThread, pthread_equal(fibThread, mainThread) ? "YES" : "NO");
-
+  printf("on_close: %p, equal main thread: %s\n", fibThread, pthread_equal(fibThread, mainThread) ? "YES" : "NO");
+#endif
   free(handle);
 }
 
 void echo_write(uv_write_t* req, int status) {
+#ifndef _WIN32
   pthread_t fibThread = pthread_self();
-  printf(
-      "echo_write: %p, equal main thread: %s\n", fibThread, pthread_equal(fibThread, mainThread) ? "YES" : "NO");
-
+  printf("echo_write: %p, equal main thread: %s\n", fibThread, pthread_equal(fibThread, mainThread) ? "YES" : "NO");
+#endif
   if (status) {
     fprintf(stderr, "Write error %s\n", uv_strerror(status));
   }
@@ -56,10 +60,10 @@ void echo_write(uv_write_t* req, int status) {
 }
 
 void echo_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf) {
+#ifndef _WIN32
   pthread_t fibThread = pthread_self();
-  printf(
-      "echo_read: %p, equal main thread: %s\n", fibThread, pthread_equal(fibThread, mainThread) ? "YES" : "NO");
-
+  printf("echo_read: %p, equal main thread: %s\n", fibThread, pthread_equal(fibThread, mainThread) ? "YES" : "NO");
+#endif
   if (nread > 0) {
     write_req_t* req = (write_req_t*)malloc(sizeof(write_req_t));
     req->buf = uv_buf_init(buf->base, nread);
@@ -76,10 +80,11 @@ void echo_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf) {
 }
 
 void on_new_connection(uv_stream_t* server, int status) {
+#ifndef _WIN32
   pthread_t fibThread = pthread_self();
   printf(
       "on_new_connection: %p, equal main thread: %s\n", fibThread, pthread_equal(fibThread, mainThread) ? "YES" : "NO");
-
+#endif
   if (status < 0) {
     fprintf(stderr, "New connection error %s\n", uv_strerror(status));
     // error!
@@ -96,8 +101,10 @@ void on_new_connection(uv_stream_t* server, int status) {
 }
 
 int main() {
+#ifndef _WIN32
   mainThread = pthread_self();
   printf("main thread: %p\n", mainThread);
+#endif
   loop = uv_default_loop();
 
   uv_tcp_t server;
