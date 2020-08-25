@@ -35,7 +35,7 @@
 #define IFF_RUNNING IFF_LINK
 #endif
 
-static int uv__ifaddr_exclude(struct ifaddrs *ent, int exclude_type) {
+static int uv__ifaddr_exclude(struct ifaddrs* ent, int exclude_type) {
   if (!((ent->ifa_flags & IFF_UP) && (ent->ifa_flags & IFF_RUNNING)))
     return 1;
   if (ent->ifa_addr == NULL)
@@ -49,8 +49,7 @@ static int uv__ifaddr_exclude(struct ifaddrs *ent, int exclude_type) {
   if (exclude_type == UV__EXCLUDE_IFPHYS)
     return (ent->ifa_addr->sa_family != AF_LINK);
 #endif
-#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__DragonFly__) || \
-    defined(__HAIKU__)
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__DragonFly__) || defined(__HAIKU__)
   /*
    * On BSD getifaddrs returns information related to the raw underlying
    * devices.  We're not interested in this information.
@@ -58,8 +57,7 @@ static int uv__ifaddr_exclude(struct ifaddrs *ent, int exclude_type) {
   if (ent->ifa_addr->sa_family == AF_LINK)
     return 1;
 #elif defined(__NetBSD__) || defined(__OpenBSD__)
-  if (ent->ifa_addr->sa_family != PF_INET &&
-      ent->ifa_addr->sa_family != PF_INET6)
+  if (ent->ifa_addr->sa_family != PF_INET && ent->ifa_addr->sa_family != PF_INET6)
     return 1;
 #endif
   return 0;
@@ -106,15 +104,15 @@ int uv_interface_addresses(uv_interface_address_t** addresses, int* count) {
     address->name = uv__strdup(ent->ifa_name);
 
     if (ent->ifa_addr->sa_family == AF_INET6) {
-      address->address.address6 = *((struct sockaddr_in6*) ent->ifa_addr);
+      address->address.address6 = *((struct sockaddr_in6*)ent->ifa_addr);
     } else {
-      address->address.address4 = *((struct sockaddr_in*) ent->ifa_addr);
+      address->address.address4 = *((struct sockaddr_in*)ent->ifa_addr);
     }
 
     if (ent->ifa_netmask->sa_family == AF_INET6) {
-      address->netmask.netmask6 = *((struct sockaddr_in6*) ent->ifa_netmask);
+      address->netmask.netmask6 = *((struct sockaddr_in6*)ent->ifa_netmask);
     } else {
-      address->netmask.netmask4 = *((struct sockaddr_in*) ent->ifa_netmask);
+      address->netmask.netmask4 = *((struct sockaddr_in*)ent->ifa_netmask);
     }
 
     address->is_internal = !!(ent->ifa_flags & IFF_LOOPBACK);
@@ -146,9 +144,7 @@ int uv_interface_addresses(uv_interface_address_t** addresses, int* count) {
   return 0;
 }
 
-
-void uv_free_interface_addresses(uv_interface_address_t* addresses,
-                                 int count) {
+void uv_free_interface_addresses(uv_interface_address_t* addresses, int count) {
   int i;
 
   for (i = 0; i < count; i++) {

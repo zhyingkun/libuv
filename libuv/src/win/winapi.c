@@ -24,7 +24,6 @@
 #include "uv.h"
 #include "internal.h"
 
-
 /* Ntdll function pointers */
 sRtlGetVersion pRtlGetVersion;
 sRtlNtStatusToDosError pRtlNtStatusToDosError;
@@ -45,7 +44,6 @@ sPowerRegisterSuspendResumeNotification pPowerRegisterSuspendResumeNotification;
 /* User32.dll function pointer */
 sSetWinEventHook pSetWinEventHook;
 
-
 void uv_winapi_init(void) {
   HMODULE ntdll_module;
   HMODULE powrprof_module;
@@ -57,59 +55,45 @@ void uv_winapi_init(void) {
     uv_fatal_error(GetLastError(), "GetModuleHandleA");
   }
 
-  pRtlGetVersion = (sRtlGetVersion) GetProcAddress(ntdll_module,
-                                                   "RtlGetVersion");
+  pRtlGetVersion = (sRtlGetVersion)GetProcAddress(ntdll_module, "RtlGetVersion");
 
-  pRtlNtStatusToDosError = (sRtlNtStatusToDosError) GetProcAddress(
-      ntdll_module,
-      "RtlNtStatusToDosError");
+  pRtlNtStatusToDosError = (sRtlNtStatusToDosError)GetProcAddress(ntdll_module, "RtlNtStatusToDosError");
   if (pRtlNtStatusToDosError == NULL) {
     uv_fatal_error(GetLastError(), "GetProcAddress");
   }
 
-  pNtDeviceIoControlFile = (sNtDeviceIoControlFile) GetProcAddress(
-      ntdll_module,
-      "NtDeviceIoControlFile");
+  pNtDeviceIoControlFile = (sNtDeviceIoControlFile)GetProcAddress(ntdll_module, "NtDeviceIoControlFile");
   if (pNtDeviceIoControlFile == NULL) {
     uv_fatal_error(GetLastError(), "GetProcAddress");
   }
 
-  pNtQueryInformationFile = (sNtQueryInformationFile) GetProcAddress(
-      ntdll_module,
-      "NtQueryInformationFile");
+  pNtQueryInformationFile = (sNtQueryInformationFile)GetProcAddress(ntdll_module, "NtQueryInformationFile");
   if (pNtQueryInformationFile == NULL) {
     uv_fatal_error(GetLastError(), "GetProcAddress");
   }
 
-  pNtSetInformationFile = (sNtSetInformationFile) GetProcAddress(
-      ntdll_module,
-      "NtSetInformationFile");
+  pNtSetInformationFile = (sNtSetInformationFile)GetProcAddress(ntdll_module, "NtSetInformationFile");
   if (pNtSetInformationFile == NULL) {
     uv_fatal_error(GetLastError(), "GetProcAddress");
   }
 
-  pNtQueryVolumeInformationFile = (sNtQueryVolumeInformationFile)
-      GetProcAddress(ntdll_module, "NtQueryVolumeInformationFile");
+  pNtQueryVolumeInformationFile =
+      (sNtQueryVolumeInformationFile)GetProcAddress(ntdll_module, "NtQueryVolumeInformationFile");
   if (pNtQueryVolumeInformationFile == NULL) {
     uv_fatal_error(GetLastError(), "GetProcAddress");
   }
 
-  pNtQueryDirectoryFile = (sNtQueryDirectoryFile)
-      GetProcAddress(ntdll_module, "NtQueryDirectoryFile");
+  pNtQueryDirectoryFile = (sNtQueryDirectoryFile)GetProcAddress(ntdll_module, "NtQueryDirectoryFile");
   if (pNtQueryVolumeInformationFile == NULL) {
     uv_fatal_error(GetLastError(), "GetProcAddress");
   }
 
-  pNtQuerySystemInformation = (sNtQuerySystemInformation) GetProcAddress(
-      ntdll_module,
-      "NtQuerySystemInformation");
+  pNtQuerySystemInformation = (sNtQuerySystemInformation)GetProcAddress(ntdll_module, "NtQuerySystemInformation");
   if (pNtQuerySystemInformation == NULL) {
     uv_fatal_error(GetLastError(), "GetProcAddress");
   }
 
-  pNtQueryInformationProcess = (sNtQueryInformationProcess) GetProcAddress(
-      ntdll_module,
-      "NtQueryInformationProcess");
+  pNtQueryInformationProcess = (sNtQueryInformationProcess)GetProcAddress(ntdll_module, "NtQueryInformationProcess");
   if (pNtQueryInformationProcess == NULL) {
     uv_fatal_error(GetLastError(), "GetProcAddress");
   }
@@ -119,20 +103,17 @@ void uv_winapi_init(void) {
     uv_fatal_error(GetLastError(), "GetModuleHandleA");
   }
 
-  pGetQueuedCompletionStatusEx = (sGetQueuedCompletionStatusEx) GetProcAddress(
-      kernel32_module,
-      "GetQueuedCompletionStatusEx");
+  pGetQueuedCompletionStatusEx =
+      (sGetQueuedCompletionStatusEx)GetProcAddress(kernel32_module, "GetQueuedCompletionStatusEx");
 
   powrprof_module = LoadLibraryA("powrprof.dll");
   if (powrprof_module != NULL) {
-    pPowerRegisterSuspendResumeNotification = (sPowerRegisterSuspendResumeNotification)
-      GetProcAddress(powrprof_module, "PowerRegisterSuspendResumeNotification");
+    pPowerRegisterSuspendResumeNotification = (sPowerRegisterSuspendResumeNotification)GetProcAddress(
+        powrprof_module, "PowerRegisterSuspendResumeNotification");
   }
 
   user32_module = LoadLibraryA("user32.dll");
   if (user32_module != NULL) {
-    pSetWinEventHook = (sSetWinEventHook)
-      GetProcAddress(user32_module, "SetWinEventHook");
+    pSetWinEventHook = (sSetWinEventHook)GetProcAddress(user32_module, "SetWinEventHook");
   }
-
 }

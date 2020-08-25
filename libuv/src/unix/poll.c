@@ -26,7 +26,6 @@
 #include <assert.h>
 #include <errno.h>
 
-
 static void uv__poll_io(uv_loop_t* loop, uv__io_t* w, unsigned int events) {
   uv_poll_t* handle;
   int pevents;
@@ -64,7 +63,6 @@ static void uv__poll_io(uv_loop_t* loop, uv__io_t* w, unsigned int events) {
   handle->poll_cb(handle, 0, pevents);
 }
 
-
 int uv_poll_init(uv_loop_t* loop, uv_poll_t* handle, int fd) {
   int err;
 
@@ -86,27 +84,21 @@ int uv_poll_init(uv_loop_t* loop, uv_poll_t* handle, int fd) {
   if (err)
     return err;
 
-  uv__handle_init(loop, (uv_handle_t*) handle, UV_POLL);
+  uv__handle_init(loop, (uv_handle_t*)handle, UV_POLL);
   uv__io_init(&handle->io_watcher, uv__poll_io, fd);
   handle->poll_cb = NULL;
   return 0;
 }
 
-
-int uv_poll_init_socket(uv_loop_t* loop, uv_poll_t* handle,
-    uv_os_sock_t socket) {
+int uv_poll_init_socket(uv_loop_t* loop, uv_poll_t* handle, uv_os_sock_t socket) {
   return uv_poll_init(loop, handle, socket);
 }
 
-
 static void uv__poll_stop(uv_poll_t* handle) {
-  uv__io_stop(handle->loop,
-              &handle->io_watcher,
-              POLLIN | POLLOUT | UV__POLLRDHUP | UV__POLLPRI);
+  uv__io_stop(handle->loop, &handle->io_watcher, POLLIN | POLLOUT | UV__POLLRDHUP | UV__POLLPRI);
   uv__handle_stop(handle);
   uv__platform_invalidate_fd(handle->loop, handle->io_watcher.fd);
 }
-
 
 int uv_poll_stop(uv_poll_t* handle) {
   assert(!uv__is_closing(handle));
@@ -114,12 +106,10 @@ int uv_poll_stop(uv_poll_t* handle) {
   return 0;
 }
 
-
 int uv_poll_start(uv_poll_t* handle, int pevents, uv_poll_cb poll_cb) {
   int events;
 
-  assert((pevents & ~(UV_READABLE | UV_WRITABLE | UV_DISCONNECT |
-                      UV_PRIORITIZED)) == 0);
+  assert((pevents & ~(UV_READABLE | UV_WRITABLE | UV_DISCONNECT | UV_PRIORITIZED)) == 0);
   assert(!uv__is_closing(handle));
 
   uv__poll_stop(handle);
@@ -143,7 +133,6 @@ int uv_poll_start(uv_poll_t* handle, int pevents, uv_poll_cb poll_cb) {
 
   return 0;
 }
-
 
 void uv__poll_close(uv_poll_t* handle) {
   uv__poll_stop(handle);

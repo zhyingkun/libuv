@@ -31,12 +31,11 @@ int uv_loop_init(uv_loop_t* loop) {
   void* saved_data;
   int err;
 
-
   saved_data = loop->data;
   memset(loop, 0, sizeof(*loop));
   loop->data = saved_data;
 
-  heap_init((struct heap*) &loop->timer_heap);
+  heap_init((struct heap*)&loop->timer_heap);
   QUEUE_INIT(&loop->wq);
   QUEUE_INIT(&loop->idle_handles);
   QUEUE_INIT(&loop->async_handles);
@@ -109,7 +108,6 @@ fail_signal_init:
   return err;
 }
 
-
 int uv_loop_fork(uv_loop_t* loop) {
   int err;
   unsigned int i;
@@ -141,7 +139,6 @@ int uv_loop_fork(uv_loop_t* loop) {
 
   return 0;
 }
-
 
 void uv__loop_close(uv_loop_t* loop) {
   uv__signal_loop_cleanup(loop);
@@ -180,7 +177,6 @@ void uv__loop_close(uv_loop_t* loop) {
   loop->watchers = NULL;
   loop->nwatchers = 0;
 }
-
 
 int uv__loop_configure(uv_loop_t* loop, uv_loop_option option, va_list ap) {
   if (option != UV_LOOP_BLOCK_SIGNAL)

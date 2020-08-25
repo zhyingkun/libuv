@@ -25,7 +25,6 @@
 #include "uv.h"
 #include "internal.h"
 
-
 /* Atomic set operation on char */
 #ifdef _MSC_VER /* MSVC */
 
@@ -45,10 +44,7 @@ static char INLINE uv__atomic_exchange_set(char volatile* target) {
 static inline char uv__atomic_exchange_set(char volatile* target) {
   const char one = 1;
   char old_value;
-  __asm__ __volatile__ ("lock xchgb %0, %1\n\t"
-                        : "=r"(old_value), "=m"(*target)
-                        : "0"(one), "m"(*target)
-                        : "memory");
+  __asm__ __volatile__("lock xchgb %0, %1\n\t" : "=r"(old_value), "=m"(*target) : "0"(one), "m"(*target) : "memory");
   return old_value;
 }
 

@@ -25,18 +25,15 @@
 #include <assert.h>
 #include <limits.h>
 
-
-static struct heap *timer_heap(const uv_loop_t* loop) {
+static struct heap* timer_heap(const uv_loop_t* loop) {
 #ifdef _WIN32
-  return (struct heap*) loop->timer_heap;
+  return (struct heap*)loop->timer_heap;
 #else
-  return (struct heap*) &loop->timer_heap;
+  return (struct heap*)&loop->timer_heap;
 #endif
 }
 
-
-static int timer_less_than(const struct heap_node* ha,
-                           const struct heap_node* hb) {
+static int timer_less_than(const struct heap_node* ha, const struct heap_node* hb) {
   const uv_timer_t* a;
   const uv_timer_t* b;
 
@@ -59,7 +56,6 @@ static int timer_less_than(const struct heap_node* ha,
   return 0;
 }
 
-
 int uv_timer_init(uv_loop_t* loop, uv_timer_t* handle) {
   uv__handle_init(loop, (uv_handle_t*)handle, UV_TIMER);
   handle->timer_cb = NULL;
@@ -67,11 +63,7 @@ int uv_timer_init(uv_loop_t* loop, uv_timer_t* handle) {
   return 0;
 }
 
-
-int uv_timer_start(uv_timer_t* handle,
-                   uv_timer_cb cb,
-                   uint64_t timeout,
-                   uint64_t repeat) {
+int uv_timer_start(uv_timer_t* handle, uv_timer_cb cb, uint64_t timeout, uint64_t repeat) {
   uint64_t clamped_timeout;
 
   if (cb == NULL)
@@ -82,7 +74,7 @@ int uv_timer_start(uv_timer_t* handle,
 
   clamped_timeout = handle->loop->time + timeout;
   if (clamped_timeout < timeout)
-    clamped_timeout = (uint64_t) -1;
+    clamped_timeout = (uint64_t)-1;
 
   handle->timer_cb = cb;
   handle->timeout = clamped_timeout;
@@ -90,27 +82,21 @@ int uv_timer_start(uv_timer_t* handle,
   /* start_id is the second index to be compared in uv__timer_cmp() */
   handle->start_id = handle->loop->timer_counter++;
 
-  heap_insert(timer_heap(handle->loop),
-              (struct heap_node*) &handle->heap_node,
-              timer_less_than);
+  heap_insert(timer_heap(handle->loop), (struct heap_node*)&handle->heap_node, timer_less_than);
   uv__handle_start(handle);
 
   return 0;
 }
 
-
 int uv_timer_stop(uv_timer_t* handle) {
   if (!uv__is_active(handle))
     return 0;
 
-  heap_remove(timer_heap(handle->loop),
-              (struct heap_node*) &handle->heap_node,
-              timer_less_than);
+  heap_remove(timer_heap(handle->loop), (struct heap_node*)&handle->heap_node, timer_less_than);
   uv__handle_stop(handle);
 
   return 0;
 }
-
 
 int uv_timer_again(uv_timer_t* handle) {
   if (handle->timer_cb == NULL)
@@ -124,16 +110,13 @@ int uv_timer_again(uv_timer_t* handle) {
   return 0;
 }
 
-
 void uv_timer_set_repeat(uv_timer_t* handle, uint64_t repeat) {
   handle->repeat = repeat;
 }
 
-
 uint64_t uv_timer_get_repeat(const uv_timer_t* handle) {
   return handle->repeat;
 }
-
 
 int uv__next_timeout(const uv_loop_t* loop) {
   const struct heap_node* heap_node;
@@ -152,9 +135,8 @@ int uv__next_timeout(const uv_loop_t* loop) {
   if (diff > INT_MAX)
     diff = INT_MAX;
 
-  return (int) diff;
+  return (int)diff;
 }
-
 
 void uv__run_timers(uv_loop_t* loop) {
   struct heap_node* heap_node;
@@ -174,7 +156,6 @@ void uv__run_timers(uv_loop_t* loop) {
     handle->timer_cb(handle);
   }
 }
-
 
 void uv__timer_close(uv_timer_t* handle) {
   uv_timer_stop(handle);

@@ -27,8 +27,8 @@
 #include <errno.h>
 
 #include <sys/time.h>
-#include <sys/resource.h>  /* getrlimit() */
-#include <unistd.h>  /* getpagesize() */
+#include <sys/resource.h> /* getrlimit() */
+#include <unistd.h> /* getpagesize() */
 
 #include <limits.h>
 
@@ -38,20 +38,18 @@
 #endif
 
 #if defined(__GLIBC__) && !defined(__UCLIBC__)
-#include <gnu/libc-version.h>  /* gnu_get_libc_version() */
+#include <gnu/libc-version.h> /* gnu_get_libc_version() */
 #endif
 
 #undef NANOSEC
-#define NANOSEC ((uint64_t) 1e9)
+#define NANOSEC ((uint64_t)1e9)
 
 #if defined(PTHREAD_BARRIER_SERIAL_THREAD)
 STATIC_ASSERT(sizeof(uv_barrier_t) == sizeof(pthread_barrier_t));
 #endif
 
 /* Note: guard clauses should match uv_barrier_t's in include/uv/unix.h. */
-#if defined(_AIX) || \
-    defined(__OpenBSD__) || \
-    !defined(PTHREAD_BARRIER_SERIAL_THREAD)
+#if defined(_AIX) || defined(__OpenBSD__) || !defined(PTHREAD_BARRIER_SERIAL_THREAD)
 int uv_barrier_init(uv_barrier_t* barrier, unsigned int count) {
   struct _uv_barrier* b;
   int rc;
@@ -85,7 +83,6 @@ error2:
   return rc;
 }
 
-
 int uv_barrier_wait(uv_barrier_t* barrier) {
   struct _uv_barrier* b;
   int last;
@@ -108,12 +105,11 @@ int uv_barrier_wait(uv_barrier_t* barrier) {
 
   last = (--b->out == 0);
   if (!last)
-    uv_cond_signal(&b->cond);  /* Not needed for last thread. */
+    uv_cond_signal(&b->cond); /* Not needed for last thread. */
 
   uv_mutex_unlock(&b->mutex);
   return last;
 }
-
 
 void uv_barrier_destroy(uv_barrier_t* barrier) {
   struct _uv_barrier* b;
@@ -141,7 +137,6 @@ int uv_barrier_init(uv_barrier_t* barrier, unsigned int count) {
   return UV__ERR(pthread_barrier_init(barrier, NULL, count));
 }
 
-
 int uv_barrier_wait(uv_barrier_t* barrier) {
   int rc;
 
@@ -153,14 +148,12 @@ int uv_barrier_wait(uv_barrier_t* barrier) {
   return rc == PTHREAD_BARRIER_SERIAL_THREAD;
 }
 
-
 void uv_barrier_destroy(uv_barrier_t* barrier) {
   if (pthread_barrier_destroy(barrier))
     abort();
 }
 
 #endif
-
 
 /* On MacOS, threads other than the main thread are created with a reduced
  * stack size by default.  Adjust to RLIMIT_STACK aligned to the page size.
@@ -177,7 +170,7 @@ static size_t thread_stack_size(void) {
 
   if (lim.rlim_cur != RLIM_INFINITY) {
     /* pthread_attr_setstacksize() expects page-aligned values. */
-    lim.rlim_cur -= lim.rlim_cur % (rlim_t) getpagesize();
+    lim.rlim_cur -= lim.rlim_cur % (rlim_t)getpagesize();
 
     /* Musl's PTHREAD_STACK_MIN is 2 KB on all architectures, which is
      * too small to safely receive signals on.
@@ -199,23 +192,19 @@ static size_t thread_stack_size(void) {
 #if !defined(__linux__)
   return 0;
 #elif defined(__PPC__) || defined(__ppc__) || defined(__powerpc__)
-  return 4 << 20;  /* glibc default. */
+  return 4 << 20; /* glibc default. */
 #else
-  return 2 << 20;  /* glibc default. */
+  return 2 << 20; /* glibc default. */
 #endif
 }
 
-
-int uv_thread_create(uv_thread_t *tid, void (*entry)(void *arg), void *arg) {
+int uv_thread_create(uv_thread_t* tid, void (*entry)(void* arg), void* arg) {
   uv_thread_options_t params;
   params.flags = UV_THREAD_NO_FLAGS;
   return uv_thread_create_ex(tid, &params, entry, arg);
 }
 
-int uv_thread_create_ex(uv_thread_t* tid,
-                        const uv_thread_options_t* params,
-                        void (*entry)(void *arg),
-                        void *arg) {
+int uv_thread_create_ex(uv_thread_t* tid, const uv_thread_options_t* params, void (*entry)(void* arg), void* arg) {
   int err;
   pthread_attr_t* attr;
   pthread_attr_t attr_storage;
@@ -228,8 +217,7 @@ int uv_thread_create_ex(uv_thread_t* tid,
     void* (*out)(void*);
   } f;
 
-  stack_size =
-      params->flags & UV_THREAD_HAS_STACK_SIZE ? params->stack_size : 0;
+  stack_size = params->flags & UV_THREAD_HAS_STACK_SIZE ? params->stack_size : 0;
 
   attr = NULL;
   if (stack_size == 0) {
@@ -237,7 +225,7 @@ int uv_thread_create_ex(uv_thread_t* tid,
   } else {
     pagesize = (size_t)getpagesize();
     /* Round up to the nearest page boundary. */
-    stack_size = (stack_size + pagesize - 1) &~ (pagesize - 1);
+    stack_size = (stack_size + pagesize - 1) & ~(pagesize - 1);
 #ifdef PTHREAD_STACK_MIN
     if (stack_size < PTHREAD_STACK_MIN)
       stack_size = PTHREAD_STACK_MIN;
@@ -263,20 +251,17 @@ int uv_thread_create_ex(uv_thread_t* tid,
   return UV__ERR(err);
 }
 
-
 uv_thread_t uv_thread_self(void) {
   return pthread_self();
 }
 
-int uv_thread_join(uv_thread_t *tid) {
+int uv_thread_join(uv_thread_t* tid) {
   return UV__ERR(pthread_join(*tid, NULL));
 }
-
 
 int uv_thread_equal(const uv_thread_t* t1, const uv_thread_t* t2) {
   return pthread_equal(*t1, *t2);
 }
-
 
 int uv_mutex_init(uv_mutex_t* mutex) {
 #if defined(NDEBUG) || !defined(PTHREAD_MUTEX_ERRORCHECK)
@@ -300,7 +285,6 @@ int uv_mutex_init(uv_mutex_t* mutex) {
 #endif
 }
 
-
 int uv_mutex_init_recursive(uv_mutex_t* mutex) {
   pthread_mutexattr_t attr;
   int err;
@@ -319,18 +303,15 @@ int uv_mutex_init_recursive(uv_mutex_t* mutex) {
   return UV__ERR(err);
 }
 
-
 void uv_mutex_destroy(uv_mutex_t* mutex) {
   if (pthread_mutex_destroy(mutex))
     abort();
 }
 
-
 void uv_mutex_lock(uv_mutex_t* mutex) {
   if (pthread_mutex_lock(mutex))
     abort();
 }
-
 
 int uv_mutex_trylock(uv_mutex_t* mutex) {
   int err;
@@ -345,29 +326,24 @@ int uv_mutex_trylock(uv_mutex_t* mutex) {
   return 0;
 }
 
-
 void uv_mutex_unlock(uv_mutex_t* mutex) {
   if (pthread_mutex_unlock(mutex))
     abort();
 }
 
-
 int uv_rwlock_init(uv_rwlock_t* rwlock) {
   return UV__ERR(pthread_rwlock_init(rwlock, NULL));
 }
-
 
 void uv_rwlock_destroy(uv_rwlock_t* rwlock) {
   if (pthread_rwlock_destroy(rwlock))
     abort();
 }
 
-
 void uv_rwlock_rdlock(uv_rwlock_t* rwlock) {
   if (pthread_rwlock_rdlock(rwlock))
     abort();
 }
-
 
 int uv_rwlock_tryrdlock(uv_rwlock_t* rwlock) {
   int err;
@@ -382,18 +358,15 @@ int uv_rwlock_tryrdlock(uv_rwlock_t* rwlock) {
   return 0;
 }
 
-
 void uv_rwlock_rdunlock(uv_rwlock_t* rwlock) {
   if (pthread_rwlock_unlock(rwlock))
     abort();
 }
 
-
 void uv_rwlock_wrlock(uv_rwlock_t* rwlock) {
   if (pthread_rwlock_wrlock(rwlock))
     abort();
 }
-
 
 int uv_rwlock_trywrlock(uv_rwlock_t* rwlock) {
   int err;
@@ -408,12 +381,10 @@ int uv_rwlock_trywrlock(uv_rwlock_t* rwlock) {
   return 0;
 }
 
-
 void uv_rwlock_wrunlock(uv_rwlock_t* rwlock) {
   if (pthread_rwlock_unlock(rwlock))
     abort();
 }
-
 
 void uv_once(uv_once_t* guard, void (*callback)(void)) {
   if (pthread_once(guard, callback))
@@ -434,21 +405,18 @@ int uv_sem_init(uv_sem_t* sem, unsigned int value) {
     return UV_ENOMEM;
 
   abort();
-  return UV_EINVAL;  /* Satisfy the compiler. */
+  return UV_EINVAL; /* Satisfy the compiler. */
 }
-
 
 void uv_sem_destroy(uv_sem_t* sem) {
   if (semaphore_destroy(mach_task_self(), *sem))
     abort();
 }
 
-
 void uv_sem_post(uv_sem_t* sem) {
   if (semaphore_signal(*sem))
     abort();
 }
-
 
 void uv_sem_wait(uv_sem_t* sem) {
   int r;
@@ -460,7 +428,6 @@ void uv_sem_wait(uv_sem_t* sem) {
   if (r != KERN_SUCCESS)
     abort();
 }
-
 
 int uv_sem_trywait(uv_sem_t* sem) {
   mach_timespec_t interval;
@@ -476,7 +443,7 @@ int uv_sem_trywait(uv_sem_t* sem) {
     return UV_EAGAIN;
 
   abort();
-  return UV_EINVAL;  /* Satisfy the compiler. */
+  return UV_EINVAL; /* Satisfy the compiler. */
 }
 
 #else /* !(defined(__APPLE__) && defined(__MACH__)) */
@@ -496,9 +463,7 @@ static int platform_needs_custom_semaphore = 0;
 
 static void glibc_version_check(void) {
   const char* version = gnu_get_libc_version();
-  platform_needs_custom_semaphore =
-      version[0] == '2' && version[1] == '.' &&
-      atoi(version + 2) < 21;
+  platform_needs_custom_semaphore = version[0] == '2' && version[1] == '.' && atoi(version + 2) < 21;
 }
 
 #elif defined(__MVS__)
@@ -517,8 +482,7 @@ typedef struct uv_semaphore_s {
   unsigned int value;
 } uv_semaphore_t;
 
-#if (defined(__GLIBC__) && !defined(__UCLIBC__)) || \
-    platform_needs_custom_semaphore
+#if (defined(__GLIBC__) && !defined(__UCLIBC__)) || platform_needs_custom_semaphore
 STATIC_ASSERT(sizeof(uv_sem_t) >= sizeof(uv_semaphore_t*));
 #endif
 
@@ -546,7 +510,6 @@ static int uv__custom_sem_init(uv_sem_t* sem_, unsigned int value) {
   return 0;
 }
 
-
 static void uv__custom_sem_destroy(uv_sem_t* sem_) {
   uv_semaphore_t* sem;
 
@@ -555,7 +518,6 @@ static void uv__custom_sem_destroy(uv_sem_t* sem_) {
   uv_mutex_destroy(&sem->mutex);
   uv__free(sem);
 }
-
 
 static void uv__custom_sem_post(uv_sem_t* sem_) {
   uv_semaphore_t* sem;
@@ -568,7 +530,6 @@ static void uv__custom_sem_post(uv_sem_t* sem_) {
   uv_mutex_unlock(&sem->mutex);
 }
 
-
 static void uv__custom_sem_wait(uv_sem_t* sem_) {
   uv_semaphore_t* sem;
 
@@ -579,7 +540,6 @@ static void uv__custom_sem_wait(uv_sem_t* sem_) {
   sem->value--;
   uv_mutex_unlock(&sem->mutex);
 }
-
 
 static int uv__custom_sem_trywait(uv_sem_t* sem_) {
   uv_semaphore_t* sem;
@@ -605,18 +565,15 @@ static int uv__sem_init(uv_sem_t* sem, unsigned int value) {
   return 0;
 }
 
-
 static void uv__sem_destroy(uv_sem_t* sem) {
   if (sem_destroy(sem))
     abort();
 }
 
-
 static void uv__sem_post(uv_sem_t* sem) {
   if (sem_post(sem))
     abort();
 }
-
 
 static void uv__sem_wait(uv_sem_t* sem) {
   int r;
@@ -628,7 +585,6 @@ static void uv__sem_wait(uv_sem_t* sem) {
   if (r)
     abort();
 }
-
 
 static int uv__sem_trywait(uv_sem_t* sem) {
   int r;
@@ -657,14 +613,12 @@ int uv_sem_init(uv_sem_t* sem, unsigned int value) {
     return uv__sem_init(sem, value);
 }
 
-
 void uv_sem_destroy(uv_sem_t* sem) {
   if (platform_needs_custom_semaphore)
     uv__custom_sem_destroy(sem);
   else
     uv__sem_destroy(sem);
 }
-
 
 void uv_sem_post(uv_sem_t* sem) {
   if (platform_needs_custom_semaphore)
@@ -673,14 +627,12 @@ void uv_sem_post(uv_sem_t* sem) {
     uv__sem_post(sem);
 }
 
-
 void uv_sem_wait(uv_sem_t* sem) {
   if (platform_needs_custom_semaphore)
     uv__custom_sem_wait(sem);
   else
     uv__sem_wait(sem);
 }
-
 
 int uv_sem_trywait(uv_sem_t* sem) {
   if (platform_needs_custom_semaphore)
@@ -690,7 +642,6 @@ int uv_sem_trywait(uv_sem_t* sem) {
 }
 
 #endif /* defined(__APPLE__) && defined(__MACH__) */
-
 
 #if defined(__APPLE__) && defined(__MACH__) || defined(__MVS__)
 
@@ -782,7 +733,6 @@ void uv_cond_wait(uv_cond_t* cond, uv_mutex_t* mutex) {
     abort();
 }
 
-
 int uv_cond_timedwait(uv_cond_t* cond, uv_mutex_t* mutex, uint64_t timeout) {
   int r;
   struct timespec ts;
@@ -816,7 +766,6 @@ int uv_cond_timedwait(uv_cond_t* cond, uv_mutex_t* mutex, uint64_t timeout) {
 #endif /* __ANDROID_API__ */
 #endif
 
-
   if (r == 0)
     return 0;
 
@@ -825,26 +774,22 @@ int uv_cond_timedwait(uv_cond_t* cond, uv_mutex_t* mutex, uint64_t timeout) {
 
   abort();
 #ifndef __SUNPRO_C
-  return UV_EINVAL;  /* Satisfy the compiler. */
+  return UV_EINVAL; /* Satisfy the compiler. */
 #endif
 }
-
 
 int uv_key_create(uv_key_t* key) {
   return UV__ERR(pthread_key_create(key, NULL));
 }
-
 
 void uv_key_delete(uv_key_t* key) {
   if (pthread_key_delete(*key))
     abort();
 }
 
-
 void* uv_key_get(uv_key_t* key) {
   return pthread_getspecific(*key);
 }
-
 
 void uv_key_set(uv_key_t* key, void* value) {
   if (pthread_setspecific(*key, value))

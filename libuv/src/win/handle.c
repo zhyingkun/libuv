@@ -27,7 +27,6 @@
 #include "internal.h"
 #include "handle-inl.h"
 
-
 uv_handle_type uv_guess_handle(uv_file file) {
   HANDLE handle;
   DWORD mode;
@@ -57,12 +56,9 @@ uv_handle_type uv_guess_handle(uv_file file) {
   }
 }
 
-
 int uv_is_active(const uv_handle_t* handle) {
-  return (handle->flags & UV_HANDLE_ACTIVE) &&
-        !(handle->flags & UV_HANDLE_CLOSING);
+  return (handle->flags & UV_HANDLE_ACTIVE) && !(handle->flags & UV_HANDLE_CLOSING);
 }
-
 
 void uv_close(uv_handle_t* handle, uv_close_cb cb) {
   uv_loop_t* loop = handle->loop;
@@ -81,19 +77,19 @@ void uv_close(uv_handle_t* handle, uv_close_cb cb) {
       return;
 
     case UV_NAMED_PIPE:
-      uv_pipe_close(loop, (uv_pipe_t*) handle);
+      uv_pipe_close(loop, (uv_pipe_t*)handle);
       return;
 
     case UV_TTY:
-      uv_tty_close((uv_tty_t*) handle);
+      uv_tty_close((uv_tty_t*)handle);
       return;
 
     case UV_UDP:
-      uv_udp_close(loop, (uv_udp_t*) handle);
+      uv_udp_close(loop, (uv_udp_t*)handle);
       return;
 
     case UV_POLL:
-      uv_poll_close(loop, (uv_poll_t*) handle);
+      uv_poll_close(loop, (uv_poll_t*)handle);
       return;
 
     case UV_TIMER:
@@ -121,23 +117,23 @@ void uv_close(uv_handle_t* handle, uv_close_cb cb) {
       return;
 
     case UV_ASYNC:
-      uv_async_close(loop, (uv_async_t*) handle);
+      uv_async_close(loop, (uv_async_t*)handle);
       return;
 
     case UV_SIGNAL:
-      uv_signal_close(loop, (uv_signal_t*) handle);
+      uv_signal_close(loop, (uv_signal_t*)handle);
       return;
 
     case UV_PROCESS:
-      uv_process_close(loop, (uv_process_t*) handle);
+      uv_process_close(loop, (uv_process_t*)handle);
       return;
 
     case UV_FS_EVENT:
-      uv_fs_event_close(loop, (uv_fs_event_t*) handle);
+      uv_fs_event_close(loop, (uv_fs_event_t*)handle);
       return;
 
     case UV_FS_POLL:
-      uv__fs_poll_close((uv_fs_poll_t*) handle);
+      uv__fs_poll_close((uv_fs_poll_t*)handle);
       uv__handle_closing(handle);
       return;
 
@@ -147,16 +143,14 @@ void uv_close(uv_handle_t* handle, uv_close_cb cb) {
   }
 }
 
-
 int uv_is_closing(const uv_handle_t* handle) {
   return !!(handle->flags & (UV_HANDLE_CLOSING | UV_HANDLE_CLOSED));
 }
-
 
 uv_os_fd_t uv_get_osfhandle(int fd) {
   return uv__get_osfhandle(fd);
 }
 
 int uv_open_osfhandle(uv_os_fd_t os_fd) {
-  return _open_osfhandle((intptr_t) os_fd, 0);
+  return _open_osfhandle((intptr_t)os_fd, 0);
 }

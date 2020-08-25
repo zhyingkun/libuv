@@ -56,20 +56,18 @@
 
 /* Max user name length, from iphlpapi.h */
 #ifndef UNLEN
-# define UNLEN 256
+#define UNLEN 256
 #endif
-
 
 /* Maximum environment variable size, including the terminating null */
 #define MAX_ENV_VAR_LENGTH 32767
 
 /* Cached copy of the process title, plus a mutex guarding it. */
-static char *process_title;
+static char* process_title;
 static CRITICAL_SECTION process_title_lock;
 
 /* Interval (in seconds) of the high-resolution clock. */
 static double hrtime_interval_ = 0;
-
 
 /*
  * One-time initialization code for functionality defined in util.c.
@@ -86,10 +84,9 @@ void uv__util_init(void) {
   if (QueryPerformanceFrequency(&perf_frequency)) {
     hrtime_interval_ = 1.0 / perf_frequency.QuadPart;
   } else {
-    hrtime_interval_= 0;
+    hrtime_interval_ = 0;
   }
 }
-
 
 int uv_exepath(char* buffer, size_t* size_ptr) {
   int utf8_len, utf16_buffer_len, utf16_len;
@@ -104,10 +101,10 @@ int uv_exepath(char* buffer, size_t* size_ptr) {
     /* Windows paths can never be longer than this. */
     utf16_buffer_len = 32768;
   } else {
-    utf16_buffer_len = (int) *size_ptr;
+    utf16_buffer_len = (int)*size_ptr;
   }
 
-  utf16_buffer = (WCHAR*) uv__malloc(sizeof(WCHAR) * utf16_buffer_len);
+  utf16_buffer = (WCHAR*)uv__malloc(sizeof(WCHAR) * utf16_buffer_len);
   if (!utf16_buffer) {
     return UV_ENOMEM;
   }
@@ -123,14 +120,7 @@ int uv_exepath(char* buffer, size_t* size_ptr) {
   utf16_buffer[utf16_len] = L'\0';
 
   /* Convert to UTF-8 */
-  utf8_len = WideCharToMultiByte(CP_UTF8,
-                                 0,
-                                 utf16_buffer,
-                                 -1,
-                                 buffer,
-                                 (int) *size_ptr,
-                                 NULL,
-                                 NULL);
+  utf8_len = WideCharToMultiByte(CP_UTF8, 0, utf16_buffer, -1, buffer, (int)*size_ptr, NULL, NULL);
   if (utf8_len == 0) {
     err = GetLastError();
     goto error;
@@ -143,11 +133,10 @@ int uv_exepath(char* buffer, size_t* size_ptr) {
   *size_ptr = utf8_len - 1;
   return 0;
 
- error:
+error:
   uv__free(utf16_buffer);
   return uv_translate_sys_error(err);
 }
-
 
 int uv_cwd(char* buffer, size_t* size) {
   DWORD utf16_len;
@@ -172,37 +161,22 @@ int uv_cwd(char* buffer, size_t* size) {
 
   /* The returned directory should not have a trailing slash, unless it points
    * at a drive root, like c:\. Remove it if needed. */
-  if (utf16_buffer[utf16_len - 1] == L'\\' &&
-      !(utf16_len == 3 && utf16_buffer[1] == L':')) {
+  if (utf16_buffer[utf16_len - 1] == L'\\' && !(utf16_len == 3 && utf16_buffer[1] == L':')) {
     utf16_len--;
     utf16_buffer[utf16_len] = L'\0';
   }
 
   /* Check how much space we need */
-  r = WideCharToMultiByte(CP_UTF8,
-                          0,
-                          utf16_buffer,
-                          -1,
-                          NULL,
-                          0,
-                          NULL,
-                          NULL);
+  r = WideCharToMultiByte(CP_UTF8, 0, utf16_buffer, -1, NULL, 0, NULL, NULL);
   if (r == 0) {
     return uv_translate_sys_error(GetLastError());
-  } else if (r > (int) *size) {
+  } else if (r > (int)*size) {
     *size = r;
     return UV_ENOBUFS;
   }
 
   /* Convert to UTF-8 */
-  r = WideCharToMultiByte(CP_UTF8,
-                          0,
-                          utf16_buffer,
-                          -1,
-                          buffer,
-                          *size > INT_MAX ? INT_MAX : (int) *size,
-                          NULL,
-                          NULL);
+  r = WideCharToMultiByte(CP_UTF8, 0, utf16_buffer, -1, buffer, *size > INT_MAX ? INT_MAX : (int)*size, NULL, NULL);
   if (r == 0) {
     return uv_translate_sys_error(GetLastError());
   }
@@ -210,7 +184,6 @@ int uv_cwd(char* buffer, size_t* size) {
   *size = r - 1;
   return 0;
 }
-
 
 int uv_chdir(const char* dir) {
   WCHAR utf16_buffer[MAX_PATH];
@@ -221,12 +194,7 @@ int uv_chdir(const char* dir) {
     return UV_EINVAL;
   }
 
-  if (MultiByteToWideChar(CP_UTF8,
-                          0,
-                          dir,
-                          -1,
-                          utf16_buffer,
-                          MAX_PATH) == 0) {
+  if (MultiByteToWideChar(CP_UTF8, 0, dir, -1, utf16_buffer, MAX_PATH) == 0) {
     DWORD error = GetLastError();
     /* The maximum length of the current working directory is 260 chars,
      * including terminating null. If it doesn't fit, the path name must be too
@@ -254,8 +222,7 @@ int uv_chdir(const char* dir) {
 
   /* The returned directory should not have a trailing slash, unless it points
    * at a drive root, like c:\. Remove it if needed. */
-  if (utf16_buffer[utf16_len - 1] == L'\\' &&
-      !(utf16_len == 3 && utf16_buffer[1] == L':')) {
+  if (utf16_buffer[utf16_len - 1] == L'\\' && !(utf16_len == 3 && utf16_buffer[1] == L':')) {
     utf16_len--;
     utf16_buffer[utf16_len] = L'\0';
   }
@@ -289,24 +256,21 @@ int uv_chdir(const char* dir) {
   return 0;
 }
 
-
 void uv_loadavg(double avg[3]) {
   /* Can't be implemented */
   avg[0] = avg[1] = avg[2] = 0;
 }
-
 
 uint64_t uv_get_free_memory(void) {
   MEMORYSTATUSEX memory_status;
   memory_status.dwLength = sizeof(memory_status);
 
   if (!GlobalMemoryStatusEx(&memory_status)) {
-     return -1;
+    return -1;
   }
 
   return (uint64_t)memory_status.ullAvailPhys;
 }
-
 
 uint64_t uv_get_total_memory(void) {
   MEMORYSTATUSEX memory_status;
@@ -319,16 +283,13 @@ uint64_t uv_get_total_memory(void) {
   return (uint64_t)memory_status.ullTotalPhys;
 }
 
-
 uint64_t uv_get_constrained_memory(void) {
-  return 0;  /* Memory constraints are unknown. */
+  return 0; /* Memory constraints are unknown. */
 }
-
 
 uv_pid_t uv_os_getpid(void) {
   return GetCurrentProcessId();
 }
-
 
 uv_pid_t uv_os_getppid(void) {
   int parent_pid = -1;
@@ -345,18 +306,16 @@ uv_pid_t uv_os_getppid(void) {
         parent_pid = pe.th32ParentProcessID;
         break;
       }
-    } while( Process32Next(handle, &pe));
+    } while (Process32Next(handle, &pe));
   }
 
   CloseHandle(handle);
   return parent_pid;
 }
 
-
 char** uv_setup_args(int argc, char** argv) {
   return argv;
 }
-
 
 int uv_set_process_title(const char* title) {
   int err;
@@ -406,7 +365,6 @@ done:
   return uv_translate_sys_error(err);
 }
 
-
 static int uv__get_process_title(void) {
   WCHAR title_w[MAX_TITLE_LENGTH];
 
@@ -419,7 +377,6 @@ static int uv__get_process_title(void) {
 
   return 0;
 }
-
 
 int uv_get_process_title(char* buffer, size_t size) {
   size_t len;
@@ -453,7 +410,6 @@ int uv_get_process_title(char* buffer, size_t size) {
   return 0;
 }
 
-
 uint64_t uv_hrtime(void) {
   uv__once_init();
   return uv__hrtime(UV__NANOSEC);
@@ -475,9 +431,8 @@ uint64_t uv__hrtime(double scale) {
    * performance counter interval, integer math could cause this computation
    * to overflow. Therefore we resort to floating point math.
    */
-  return (uint64_t) ((double) counter.QuadPart * hrtime_interval_ * scale);
+  return (uint64_t)((double)counter.QuadPart * hrtime_interval_ * scale);
 }
-
 
 int uv_resident_set_memory(size_t* rss) {
   HANDLE current_process;
@@ -494,11 +449,10 @@ int uv_resident_set_memory(size_t* rss) {
   return 0;
 }
 
-
 int uv_uptime(double* uptime) {
   BYTE stack_buffer[4096];
   BYTE* malloced_buffer = NULL;
-  BYTE* buffer = (BYTE*) stack_buffer;
+  BYTE* buffer = (BYTE*)stack_buffer;
   size_t buffer_size = sizeof(stack_buffer);
   DWORD data_size;
 
@@ -511,13 +465,8 @@ int uv_uptime(double* uptime) {
   for (;;) {
     LONG result;
 
-    data_size = (DWORD) buffer_size;
-    result = RegQueryValueExW(HKEY_PERFORMANCE_DATA,
-                              L"2",
-                              NULL,
-                              NULL,
-                              buffer,
-                              &data_size);
+    data_size = (DWORD)buffer_size;
+    result = RegQueryValueExW(HKEY_PERFORMANCE_DATA, L"2", NULL, NULL, buffer, &data_size);
     if (result == ERROR_SUCCESS) {
       break;
     } else if (result != ERROR_MORE_DATA) {
@@ -533,7 +482,7 @@ int uv_uptime(double* uptime) {
 
     uv__free(malloced_buffer);
 
-    buffer = malloced_buffer = (BYTE*) uv__malloc(buffer_size);
+    buffer = malloced_buffer = (BYTE*)uv__malloc(buffer_size);
     if (malloced_buffer == NULL) {
       *uptime = 0;
       return UV_ENOMEM;
@@ -543,7 +492,7 @@ int uv_uptime(double* uptime) {
   if (data_size < sizeof(*data_block))
     goto internalError;
 
-  data_block = (PERF_DATA_BLOCK*) buffer;
+  data_block = (PERF_DATA_BLOCK*)buffer;
 
   if (wmemcmp(data_block->Signature, L"PERF", 4) != 0)
     goto internalError;
@@ -551,37 +500,31 @@ int uv_uptime(double* uptime) {
   if (data_size < data_block->HeaderLength + sizeof(*object_type))
     goto internalError;
 
-  object_type = (PERF_OBJECT_TYPE*) (buffer + data_block->HeaderLength);
+  object_type = (PERF_OBJECT_TYPE*)(buffer + data_block->HeaderLength);
 
   if (object_type->NumInstances != PERF_NO_INSTANCES)
     goto internalError;
 
-  counter_definition = (PERF_COUNTER_DEFINITION*) (buffer +
-      data_block->HeaderLength + object_type->HeaderLength);
+  counter_definition = (PERF_COUNTER_DEFINITION*)(buffer + data_block->HeaderLength + object_type->HeaderLength);
   for (i = 0; i < object_type->NumCounters; i++) {
-    if ((BYTE*) counter_definition + sizeof(*counter_definition) >
-        buffer + data_size) {
+    if ((BYTE*)counter_definition + sizeof(*counter_definition) > buffer + data_size) {
       break;
     }
 
-    if (counter_definition->CounterNameTitleIndex == 674 &&
-        counter_definition->CounterSize == sizeof(uint64_t)) {
+    if (counter_definition->CounterNameTitleIndex == 674 && counter_definition->CounterSize == sizeof(uint64_t)) {
       if (counter_definition->CounterOffset + sizeof(uint64_t) > data_size ||
           !(counter_definition->CounterType & PERF_OBJECT_TIMER)) {
         goto internalError;
       } else {
-        BYTE* address = (BYTE*) object_type + object_type->DefinitionLength +
-                        counter_definition->CounterOffset;
-        uint64_t value = *((uint64_t*) address);
-        *uptime = floor((double) (object_type->PerfTime.QuadPart - value) /
-                        (double) object_type->PerfFreq.QuadPart);
+        BYTE* address = (BYTE*)object_type + object_type->DefinitionLength + counter_definition->CounterOffset;
+        uint64_t value = *((uint64_t*)address);
+        *uptime = floor((double)(object_type->PerfTime.QuadPart - value) / (double)object_type->PerfFreq.QuadPart);
         uv__free(malloced_buffer);
         return 0;
       }
     }
 
-    counter_definition = (PERF_COUNTER_DEFINITION*)
-        ((BYTE*) counter_definition + counter_definition->ByteLength);
+    counter_definition = (PERF_COUNTER_DEFINITION*)((BYTE*)counter_definition + counter_definition->ByteLength);
   }
 
   /* If we get here, the uptime value was not found. */
@@ -589,12 +532,11 @@ int uv_uptime(double* uptime) {
   *uptime = 0;
   return UV_ENOSYS;
 
- internalError:
+internalError:
   uv__free(malloced_buffer);
   *uptime = 0;
   return UV_EIO;
 }
-
 
 int uv_cpu_info(uv_cpu_info_t** cpu_infos_ptr, int* cpu_count_ptr) {
   uv_cpu_info_t* cpu_infos;
@@ -629,10 +571,7 @@ int uv_cpu_info(uv_cpu_info_t** cpu_infos_ptr, int* cpu_count_ptr) {
     goto error;
   }
 
-  status = pNtQuerySystemInformation(SystemProcessorPerformanceInformation,
-                                     sppi,
-                                     sppi_size,
-                                     &result_size);
+  status = pNtQuerySystemInformation(SystemProcessorPerformanceInformation, sppi, sppi_size, &result_size);
   if (!NT_SUCCESS(status)) {
     err = pRtlNtStatusToDosError(status);
     goto error;
@@ -649,39 +588,22 @@ int uv_cpu_info(uv_cpu_info_t** cpu_infos_ptr, int* cpu_count_ptr) {
     DWORD cpu_brand_size = sizeof(cpu_brand);
     size_t len;
 
-    len = _snwprintf(key_name,
-                     ARRAY_SIZE(key_name),
-                     L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\%d",
-                     i);
+    len = _snwprintf(key_name, ARRAY_SIZE(key_name), L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\%d", i);
 
     assert(len > 0 && len < ARRAY_SIZE(key_name));
 
-    err = RegOpenKeyExW(HKEY_LOCAL_MACHINE,
-                        key_name,
-                        0,
-                        KEY_QUERY_VALUE,
-                        &processor_key);
+    err = RegOpenKeyExW(HKEY_LOCAL_MACHINE, key_name, 0, KEY_QUERY_VALUE, &processor_key);
     if (err != ERROR_SUCCESS) {
       goto error;
     }
 
-    err = RegQueryValueExW(processor_key,
-                           L"~MHz",
-                           NULL,
-                           NULL,
-                           (BYTE*)&cpu_speed,
-                           &cpu_speed_size);
+    err = RegQueryValueExW(processor_key, L"~MHz", NULL, NULL, (BYTE*)&cpu_speed, &cpu_speed_size);
     if (err != ERROR_SUCCESS) {
       RegCloseKey(processor_key);
       goto error;
     }
 
-    err = RegQueryValueExW(processor_key,
-                           L"ProcessorNameString",
-                           NULL,
-                           NULL,
-                           (BYTE*)&cpu_brand,
-                           &cpu_brand_size);
+    err = RegQueryValueExW(processor_key, L"ProcessorNameString", NULL, NULL, (BYTE*)&cpu_brand, &cpu_brand_size);
     RegCloseKey(processor_key);
     if (err != ERROR_SUCCESS)
       goto error;
@@ -689,15 +611,12 @@ int uv_cpu_info(uv_cpu_info_t** cpu_infos_ptr, int* cpu_count_ptr) {
     cpu_info = &cpu_infos[i];
     cpu_info->speed = cpu_speed;
     cpu_info->cpu_times.user = sppi[i].UserTime.QuadPart / 10000;
-    cpu_info->cpu_times.sys = (sppi[i].KernelTime.QuadPart -
-        sppi[i].IdleTime.QuadPart) / 10000;
+    cpu_info->cpu_times.sys = (sppi[i].KernelTime.QuadPart - sppi[i].IdleTime.QuadPart) / 10000;
     cpu_info->cpu_times.idle = sppi[i].IdleTime.QuadPart / 10000;
     cpu_info->cpu_times.irq = sppi[i].InterruptTime.QuadPart / 10000;
     cpu_info->cpu_times.nice = 0;
 
-    uv__convert_utf16_to_utf8(cpu_brand,
-                              cpu_brand_size / sizeof(WCHAR),
-                              &(cpu_info->model));
+    uv__convert_utf16_to_utf8(cpu_brand, cpu_brand_size / sizeof(WCHAR), &(cpu_info->model));
   }
 
   uv__free(sppi);
@@ -707,7 +626,7 @@ int uv_cpu_info(uv_cpu_info_t** cpu_infos_ptr, int* cpu_count_ptr) {
 
   return 0;
 
- error:
+error:
   if (cpu_infos != NULL) {
     /* This is safe because the cpu_infos array is zeroed on allocation. */
     for (i = 0; i < cpu_count; i++)
@@ -720,7 +639,6 @@ int uv_cpu_info(uv_cpu_info_t** cpu_infos_ptr, int* cpu_count_ptr) {
   return uv_translate_sys_error(err);
 }
 
-
 void uv_free_cpu_info(uv_cpu_info_t* cpu_infos, int count) {
   int i;
 
@@ -731,10 +649,7 @@ void uv_free_cpu_info(uv_cpu_info_t* cpu_infos, int count) {
   uv__free(cpu_infos);
 }
 
-
-static int is_windows_version_or_greater(DWORD os_major,
-                                         DWORD os_minor,
-                                         WORD service_pack_major,
+static int is_windows_version_or_greater(DWORD os_major, DWORD os_minor, WORD service_pack_major,
                                          WORD service_pack_minor) {
   OSVERSIONINFOEX osvi;
   DWORDLONG condition_mask = 0;
@@ -755,18 +670,11 @@ static int is_windows_version_or_greater(DWORD os_major,
   VER_SET_CONDITION(condition_mask, VER_SERVICEPACKMINOR, op);
 
   /* Perform the test. */
-  return (int) VerifyVersionInfo(
-    &osvi,
-    VER_MAJORVERSION | VER_MINORVERSION |
-    VER_SERVICEPACKMAJOR | VER_SERVICEPACKMINOR,
-    condition_mask);
+  return (int)VerifyVersionInfo(
+      &osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_SERVICEPACKMAJOR | VER_SERVICEPACKMINOR, condition_mask);
 }
 
-
-static int address_prefix_match(int family,
-                                struct sockaddr* address,
-                                struct sockaddr* prefix_address,
-                                int prefix_len) {
+static int address_prefix_match(int family, struct sockaddr* address, struct sockaddr* prefix_address, int prefix_len) {
   uint8_t* address_data;
   uint8_t* prefix_address_data;
   int i;
@@ -775,30 +683,25 @@ static int address_prefix_match(int family,
   assert(prefix_address->sa_family == family);
 
   if (family == AF_INET6) {
-    address_data = (uint8_t*) &(((struct sockaddr_in6 *) address)->sin6_addr);
-    prefix_address_data =
-      (uint8_t*) &(((struct sockaddr_in6 *) prefix_address)->sin6_addr);
+    address_data = (uint8_t*)&(((struct sockaddr_in6*)address)->sin6_addr);
+    prefix_address_data = (uint8_t*)&(((struct sockaddr_in6*)prefix_address)->sin6_addr);
   } else {
-    address_data = (uint8_t*) &(((struct sockaddr_in *) address)->sin_addr);
-    prefix_address_data =
-      (uint8_t*) &(((struct sockaddr_in *) prefix_address)->sin_addr);
+    address_data = (uint8_t*)&(((struct sockaddr_in*)address)->sin_addr);
+    prefix_address_data = (uint8_t*)&(((struct sockaddr_in*)prefix_address)->sin_addr);
   }
 
-  for (i = 0; i < prefix_len >> 3; i++) {
+  for (i = 0; i<prefix_len>> 3; i++) {
     if (address_data[i] != prefix_address_data[i])
       return 0;
   }
 
   if (prefix_len % 8)
-    return prefix_address_data[i] ==
-      (address_data[i] & (0xff << (8 - prefix_len % 8)));
+    return prefix_address_data[i] == (address_data[i] & (0xff << (8 - prefix_len % 8)));
 
   return 1;
 }
 
-
-int uv_interface_addresses(uv_interface_address_t** addresses_ptr,
-    int* count_ptr) {
+int uv_interface_addresses(uv_interface_address_t** addresses_ptr, int* count_ptr) {
   IP_ADAPTER_ADDRESSES* win_address_buf;
   ULONG win_address_buf_size;
   IP_ADAPTER_ADDRESSES* adapter;
@@ -818,17 +721,14 @@ int uv_interface_addresses(uv_interface_address_t** addresses_ptr,
 
   is_vista_or_greater = is_windows_version_or_greater(6, 0, 0, 0);
   if (is_vista_or_greater) {
-    flags = GAA_FLAG_SKIP_ANYCAST | GAA_FLAG_SKIP_MULTICAST |
-      GAA_FLAG_SKIP_DNS_SERVER;
+    flags = GAA_FLAG_SKIP_ANYCAST | GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_DNS_SERVER;
   } else {
     /* We need at least XP SP1. */
     if (!is_windows_version_or_greater(5, 1, 1, 0))
       return UV_ENOTSUP;
 
-    flags = GAA_FLAG_SKIP_ANYCAST | GAA_FLAG_SKIP_MULTICAST |
-      GAA_FLAG_SKIP_DNS_SERVER | GAA_FLAG_INCLUDE_PREFIX;
+    flags = GAA_FLAG_SKIP_ANYCAST | GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_DNS_SERVER | GAA_FLAG_INCLUDE_PREFIX;
   }
-
 
   /* Fetch the size of the adapters reported by windows, and then get the list
    * itself. */
@@ -841,11 +741,7 @@ int uv_interface_addresses(uv_interface_address_t** addresses_ptr,
     /* If win_address_buf is 0, then GetAdaptersAddresses will fail with.
      * ERROR_BUFFER_OVERFLOW, and the required buffer size will be stored in
      * win_address_buf_size. */
-    r = GetAdaptersAddresses(AF_UNSPEC,
-                             flags,
-                             NULL,
-                             win_address_buf,
-                             &win_address_buf_size);
+    r = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, win_address_buf, &win_address_buf_size);
 
     if (r == ERROR_SUCCESS)
       break;
@@ -901,28 +797,18 @@ int uv_interface_addresses(uv_interface_address_t** addresses_ptr,
   count = 0;
   uv_address_buf_size = 0;
 
-  for (adapter = win_address_buf;
-       adapter != NULL;
-       adapter = adapter->Next) {
+  for (adapter = win_address_buf; adapter != NULL; adapter = adapter->Next) {
     IP_ADAPTER_UNICAST_ADDRESS* unicast_address;
     int name_size;
 
     /* Interfaces that are not 'up' should not be reported. Also skip
      * interfaces that have no associated unicast address, as to avoid
      * allocating space for the name for this interface. */
-    if (adapter->OperStatus != IfOperStatusUp ||
-        adapter->FirstUnicastAddress == NULL)
+    if (adapter->OperStatus != IfOperStatusUp || adapter->FirstUnicastAddress == NULL)
       continue;
 
     /* Compute the size of the interface name. */
-    name_size = WideCharToMultiByte(CP_UTF8,
-                                    0,
-                                    adapter->FriendlyName,
-                                    -1,
-                                    NULL,
-                                    0,
-                                    NULL,
-                                    FALSE);
+    name_size = WideCharToMultiByte(CP_UTF8, 0, adapter->FriendlyName, -1, NULL, 0, NULL, FALSE);
     if (name_size <= 0) {
       uv__free(win_address_buf);
       return uv_translate_sys_error(GetLastError());
@@ -931,9 +817,7 @@ int uv_interface_addresses(uv_interface_address_t** addresses_ptr,
 
     /* Count the number of addresses associated with this interface, and
      * compute the size. */
-    for (unicast_address = (IP_ADAPTER_UNICAST_ADDRESS*)
-                           adapter->FirstUnicastAddress;
-         unicast_address != NULL;
+    for (unicast_address = (IP_ADAPTER_UNICAST_ADDRESS*)adapter->FirstUnicastAddress; unicast_address != NULL;
          unicast_address = unicast_address->Next) {
       count++;
       uv_address_buf_size += sizeof(uv_interface_address_t);
@@ -950,32 +834,22 @@ int uv_interface_addresses(uv_interface_address_t** addresses_ptr,
   /* Compute the start of the uv_interface_address_t array, and the place in
    * the buffer where the interface names will be stored. */
   uv_address = uv_address_buf;
-  name_buf = (char*) (uv_address_buf + count);
+  name_buf = (char*)(uv_address_buf + count);
 
   /* Fill out the output buffer. */
-  for (adapter = win_address_buf;
-       adapter != NULL;
-       adapter = adapter->Next) {
+  for (adapter = win_address_buf; adapter != NULL; adapter = adapter->Next) {
     IP_ADAPTER_UNICAST_ADDRESS* unicast_address;
     int name_size;
     size_t max_name_size;
 
-    if (adapter->OperStatus != IfOperStatusUp ||
-        adapter->FirstUnicastAddress == NULL)
+    if (adapter->OperStatus != IfOperStatusUp || adapter->FirstUnicastAddress == NULL)
       continue;
 
     /* Convert the interface name to UTF8. */
-    max_name_size = (char*) uv_address_buf + uv_address_buf_size - name_buf;
-    if (max_name_size > (size_t) INT_MAX)
+    max_name_size = (char*)uv_address_buf + uv_address_buf_size - name_buf;
+    if (max_name_size > (size_t)INT_MAX)
       max_name_size = INT_MAX;
-    name_size = WideCharToMultiByte(CP_UTF8,
-                                    0,
-                                    adapter->FriendlyName,
-                                    -1,
-                                    name_buf,
-                                    (int) max_name_size,
-                                    NULL,
-                                    FALSE);
+    name_size = WideCharToMultiByte(CP_UTF8, 0, adapter->FriendlyName, -1, name_buf, (int)max_name_size, NULL, FALSE);
     if (name_size <= 0) {
       uv__free(win_address_buf);
       uv__free(uv_address_buf);
@@ -983,9 +857,7 @@ int uv_interface_addresses(uv_interface_address_t** addresses_ptr,
     }
 
     /* Add an uv_interface_address_t element for every unicast address. */
-    for (unicast_address = (IP_ADAPTER_UNICAST_ADDRESS*)
-                           adapter->FirstUnicastAddress;
-         unicast_address != NULL;
+    for (unicast_address = (IP_ADAPTER_UNICAST_ADDRESS*)adapter->FirstUnicastAddress; unicast_address != NULL;
          unicast_address = unicast_address->Next) {
       struct sockaddr* sa;
       ULONG prefix_len;
@@ -994,8 +866,7 @@ int uv_interface_addresses(uv_interface_address_t** addresses_ptr,
 
       /* XP has no OnLinkPrefixLength field. */
       if (is_vista_or_greater) {
-        prefix_len =
-          ((IP_ADAPTER_UNICAST_ADDRESS_LH*) unicast_address)->OnLinkPrefixLength;
+        prefix_len = ((IP_ADAPTER_UNICAST_ADDRESS_LH*)unicast_address)->OnLinkPrefixLength;
       } else {
         /* Prior to Windows Vista the FirstPrefix pointed to the list with
          * single prefix for each IP address assigned to the adapter.
@@ -1007,12 +878,10 @@ int uv_interface_addresses(uv_interface_address_t** addresses_ptr,
 
         for (prefix = adapter->FirstPrefix; prefix; prefix = prefix->Next) {
           /* We want the longest matching prefix. */
-          if (prefix->Address.lpSockaddr->sa_family != sa->sa_family ||
-              prefix->PrefixLength <= prefix_len)
+          if (prefix->Address.lpSockaddr->sa_family != sa->sa_family || prefix->PrefixLength <= prefix_len)
             continue;
 
-          if (address_prefix_match(sa->sa_family, sa,
-              prefix->Address.lpSockaddr, prefix->PrefixLength)) {
+          if (address_prefix_match(sa->sa_family, sa, prefix->Address.lpSockaddr, prefix->PrefixLength)) {
             prefix_len = prefix->PrefixLength;
           }
         }
@@ -1029,31 +898,26 @@ int uv_interface_addresses(uv_interface_address_t** addresses_ptr,
       uv_address->name = name_buf;
 
       if (adapter->PhysicalAddressLength == sizeof(uv_address->phys_addr)) {
-        memcpy(uv_address->phys_addr,
-               adapter->PhysicalAddress,
-               sizeof(uv_address->phys_addr));
+        memcpy(uv_address->phys_addr, adapter->PhysicalAddress, sizeof(uv_address->phys_addr));
       }
 
-      uv_address->is_internal =
-          (adapter->IfType == IF_TYPE_SOFTWARE_LOOPBACK);
+      uv_address->is_internal = (adapter->IfType == IF_TYPE_SOFTWARE_LOOPBACK);
 
       if (sa->sa_family == AF_INET6) {
-        uv_address->address.address6 = *((struct sockaddr_in6 *) sa);
+        uv_address->address.address6 = *((struct sockaddr_in6*)sa);
 
         uv_address->netmask.netmask6.sin6_family = AF_INET6;
         memset(uv_address->netmask.netmask6.sin6_addr.s6_addr, 0xff, prefix_len >> 3);
         /* This check ensures that we don't write past the size of the data. */
         if (prefix_len % 8) {
-          uv_address->netmask.netmask6.sin6_addr.s6_addr[prefix_len >> 3] =
-              0xff << (8 - prefix_len % 8);
+          uv_address->netmask.netmask6.sin6_addr.s6_addr[prefix_len >> 3] = 0xff << (8 - prefix_len % 8);
         }
 
       } else {
-        uv_address->address.address4 = *((struct sockaddr_in *) sa);
+        uv_address->address.address4 = *((struct sockaddr_in*)sa);
 
         uv_address->netmask.netmask4.sin_family = AF_INET;
-        uv_address->netmask.netmask4.sin_addr.s_addr = (prefix_len > 0) ?
-            htonl(0xffffffff << (32 - prefix_len)) : 0;
+        uv_address->netmask.netmask4.sin_addr.s_addr = (prefix_len > 0) ? htonl(0xffffffff << (32 - prefix_len)) : 0;
       }
 
       uv_address++;
@@ -1070,14 +934,11 @@ int uv_interface_addresses(uv_interface_address_t** addresses_ptr,
   return 0;
 }
 
-
-void uv_free_interface_addresses(uv_interface_address_t* addresses,
-    int count) {
+void uv_free_interface_addresses(uv_interface_address_t* addresses, int count) {
   uv__free(addresses);
 }
 
-
-int uv_getrusage(uv_rusage_t *uv_rusage) {
+int uv_getrusage(uv_rusage_t* uv_rusage) {
   FILETIME createTime, exitTime, kernelTime, userTime;
   SYSTEMTIME kernelSystemTime, userSystemTime;
   PROCESS_MEMORY_COUNTERS memCounters;
@@ -1099,9 +960,7 @@ int uv_getrusage(uv_rusage_t *uv_rusage) {
     return uv_translate_sys_error(GetLastError());
   }
 
-  ret = GetProcessMemoryInfo(GetCurrentProcess(),
-                             &memCounters,
-                             sizeof(memCounters));
+  ret = GetProcessMemoryInfo(GetCurrentProcess(), &memCounters, sizeof(memCounters));
   if (ret == 0) {
     return uv_translate_sys_error(GetLastError());
   }
@@ -1113,25 +972,20 @@ int uv_getrusage(uv_rusage_t *uv_rusage) {
 
   memset(uv_rusage, 0, sizeof(*uv_rusage));
 
-  uv_rusage->ru_utime.tv_sec = userSystemTime.wHour * 3600 +
-                               userSystemTime.wMinute * 60 +
-                               userSystemTime.wSecond;
+  uv_rusage->ru_utime.tv_sec = userSystemTime.wHour * 3600 + userSystemTime.wMinute * 60 + userSystemTime.wSecond;
   uv_rusage->ru_utime.tv_usec = userSystemTime.wMilliseconds * 1000;
 
-  uv_rusage->ru_stime.tv_sec = kernelSystemTime.wHour * 3600 +
-                               kernelSystemTime.wMinute * 60 +
-                               kernelSystemTime.wSecond;
+  uv_rusage->ru_stime.tv_sec = kernelSystemTime.wHour * 3600 + kernelSystemTime.wMinute * 60 + kernelSystemTime.wSecond;
   uv_rusage->ru_stime.tv_usec = kernelSystemTime.wMilliseconds * 1000;
 
-  uv_rusage->ru_majflt = (uint64_t) memCounters.PageFaultCount;
-  uv_rusage->ru_maxrss = (uint64_t) memCounters.PeakWorkingSetSize / 1024;
+  uv_rusage->ru_majflt = (uint64_t)memCounters.PageFaultCount;
+  uv_rusage->ru_maxrss = (uint64_t)memCounters.PeakWorkingSetSize / 1024;
 
-  uv_rusage->ru_oublock = (uint64_t) ioCounters.WriteOperationCount;
-  uv_rusage->ru_inblock = (uint64_t) ioCounters.ReadOperationCount;
+  uv_rusage->ru_oublock = (uint64_t)ioCounters.WriteOperationCount;
+  uv_rusage->ru_inblock = (uint64_t)ioCounters.ReadOperationCount;
 
   return 0;
 }
-
 
 int uv_os_homedir(char* buffer, size_t* size) {
   uv_passwd_t pwd;
@@ -1169,7 +1023,6 @@ int uv_os_homedir(char* buffer, size_t* size) {
   return 0;
 }
 
-
 int uv_os_tmpdir(char* buffer, size_t* size) {
   wchar_t path[MAX_PATH + 2];
   DWORD bufsize;
@@ -1189,8 +1042,7 @@ int uv_os_tmpdir(char* buffer, size_t* size) {
 
   /* The returned directory should not have a trailing slash, unless it points
    * at a drive root, like c:\. Remove it if needed. */
-  if (path[len - 1] == L'\\' &&
-      !(len == 3 && path[1] == L':')) {
+  if (path[len - 1] == L'\\' && !(len == 3 && path[1] == L':')) {
     len--;
     path[len] = L'\0';
   }
@@ -1206,14 +1058,7 @@ int uv_os_tmpdir(char* buffer, size_t* size) {
   }
 
   /* Convert to UTF-8 */
-  bufsize = WideCharToMultiByte(CP_UTF8,
-                                0,
-                                path,
-                                -1,
-                                buffer,
-                                *size,
-                                NULL,
-                                NULL);
+  bufsize = WideCharToMultiByte(CP_UTF8, 0, path, -1, buffer, *size, NULL, NULL);
 
   if (bufsize == 0)
     return uv_translate_sys_error(GetLastError());
@@ -1221,7 +1066,6 @@ int uv_os_tmpdir(char* buffer, size_t* size) {
   *size = bufsize - 1;
   return 0;
 }
-
 
 void uv_os_free_passwd(uv_passwd_t* pwd) {
   if (pwd == NULL)
@@ -1232,7 +1076,6 @@ void uv_os_free_passwd(uv_passwd_t* pwd) {
   pwd->username = NULL;
   pwd->homedir = NULL;
 }
-
 
 /*
  * Converts a UTF-16 string into a UTF-8 one. The resulting string is
@@ -1248,14 +1091,7 @@ int uv__convert_utf16_to_utf8(const WCHAR* utf16, int utf16len, char** utf8) {
     return UV_EINVAL;
 
   /* Check how much space we need */
-  bufsize = WideCharToMultiByte(CP_UTF8,
-                                0,
-                                utf16,
-                                utf16len,
-                                NULL,
-                                0,
-                                NULL,
-                                NULL);
+  bufsize = WideCharToMultiByte(CP_UTF8, 0, utf16, utf16len, NULL, 0, NULL, NULL);
 
   if (bufsize == 0)
     return uv_translate_sys_error(GetLastError());
@@ -1269,14 +1105,7 @@ int uv__convert_utf16_to_utf8(const WCHAR* utf16, int utf16len, char** utf8) {
     return UV_ENOMEM;
 
   /* Convert to UTF-8 */
-  bufsize = WideCharToMultiByte(CP_UTF8,
-                                0,
-                                utf16,
-                                utf16len,
-                                *utf8,
-                                bufsize,
-                                NULL,
-                                NULL);
+  bufsize = WideCharToMultiByte(CP_UTF8, 0, utf16, utf16len, *utf8, bufsize, NULL, NULL);
 
   if (bufsize == 0) {
     uv__free(*utf8);
@@ -1287,7 +1116,6 @@ int uv__convert_utf16_to_utf8(const WCHAR* utf16, int utf16len, char** utf8) {
   (*utf8)[bufsize] = '\0';
   return 0;
 }
-
 
 /*
  * Converts a UTF-8 string into a UTF-16 one. The resulting string is
@@ -1328,7 +1156,6 @@ int uv__convert_utf8_to_utf16(const char* utf8, int utf8len, WCHAR** utf16) {
   (*utf16)[bufsize] = '\0';
   return 0;
 }
-
 
 int uv__getpwuid_r(uv_passwd_t* pwd) {
   HANDLE token;
@@ -1391,11 +1218,9 @@ int uv__getpwuid_r(uv_passwd_t* pwd) {
   return 0;
 }
 
-
 int uv_os_get_passwd(uv_passwd_t* pwd) {
   return uv__getpwuid_r(pwd);
 }
-
 
 int uv_os_environ(uv_env_item_t** envitems, int* count) {
   wchar_t* env;
@@ -1410,7 +1235,8 @@ int uv_os_environ(uv_env_item_t** envitems, int* count) {
   if (env == NULL)
     return 0;
 
-  for (penv = env, i = 0; *penv != L'\0'; penv += wcslen(penv) + 1, i++);
+  for (penv = env, i = 0; *penv != L'\0'; penv += wcslen(penv) + 1, i++)
+    ;
 
   *envitems = uv__calloc(i, sizeof(**envitems));
   if (envitems == NULL) {
@@ -1465,7 +1291,6 @@ fail:
   return UV_ENOMEM;
 }
 
-
 int uv_os_getenv(const char* name, char* buffer, size_t* size) {
   wchar_t var[MAX_ENV_VAR_LENGTH];
   wchar_t* name_w;
@@ -1505,14 +1330,7 @@ int uv_os_getenv(const char* name, char* buffer, size_t* size) {
   }
 
   /* Convert to UTF-8 */
-  bufsize = WideCharToMultiByte(CP_UTF8,
-                                0,
-                                var,
-                                -1,
-                                buffer,
-                                *size,
-                                NULL,
-                                NULL);
+  bufsize = WideCharToMultiByte(CP_UTF8, 0, var, -1, buffer, *size, NULL, NULL);
 
   if (bufsize == 0)
     return uv_translate_sys_error(GetLastError());
@@ -1520,7 +1338,6 @@ int uv_os_getenv(const char* name, char* buffer, size_t* size) {
   *size = bufsize - 1;
   return 0;
 }
-
 
 int uv_os_setenv(const char* name, const char* value) {
   wchar_t* name_w;
@@ -1552,7 +1369,6 @@ int uv_os_setenv(const char* name, const char* value) {
   return 0;
 }
 
-
 int uv_os_unsetenv(const char* name) {
   wchar_t* name_w;
   int r;
@@ -1573,7 +1389,6 @@ int uv_os_unsetenv(const char* name) {
 
   return 0;
 }
-
 
 int uv_os_gethostname(char* buffer, size_t* size) {
   char buf[UV_MAXHOSTNAMESIZE];
@@ -1600,7 +1415,6 @@ int uv_os_gethostname(char* buffer, size_t* size) {
   return 0;
 }
 
-
 static int uv__get_handle(uv_pid_t pid, int access, HANDLE* handle) {
   int r;
 
@@ -1620,7 +1434,6 @@ static int uv__get_handle(uv_pid_t pid, int access, HANDLE* handle) {
 
   return 0;
 }
-
 
 int uv_os_getpriority(uv_pid_t pid, int* priority) {
   HANDLE handle;
@@ -1650,7 +1463,7 @@ int uv_os_getpriority(uv_pid_t pid, int* priority) {
       *priority = UV_PRIORITY_NORMAL;
     else if (r == BELOW_NORMAL_PRIORITY_CLASS)
       *priority = UV_PRIORITY_BELOW_NORMAL;
-    else  /* IDLE_PRIORITY_CLASS */
+    else /* IDLE_PRIORITY_CLASS */
       *priority = UV_PRIORITY_LOW;
 
     r = 0;
@@ -1659,7 +1472,6 @@ int uv_os_getpriority(uv_pid_t pid, int* priority) {
   CloseHandle(handle);
   return r;
 }
-
 
 int uv_os_setpriority(uv_pid_t pid, int priority) {
   HANDLE handle;
@@ -1694,7 +1506,6 @@ int uv_os_setpriority(uv_pid_t pid, int priority) {
   return r;
 }
 
-
 int uv_os_uname(uv_utsname_t* buffer) {
   /* Implementation loosely based on
      https://github.com/gagern/gnulib/blob/master/lib/uname.c */
@@ -1719,8 +1530,8 @@ int uv_os_uname(uv_utsname_t* buffer) {
   if (pRtlGetVersion) {
     pRtlGetVersion(&os_info);
   } else {
-    /* Silence GetVersionEx() deprecation warning. */
-    #pragma warning(suppress : 4996)
+/* Silence GetVersionEx() deprecation warning. */
+#pragma warning(suppress : 4996)
     if (GetVersionExW(&os_info) == 0) {
       r = uv_translate_sys_error(GetLastError());
       goto error;
@@ -1729,32 +1540,18 @@ int uv_os_uname(uv_utsname_t* buffer) {
 
   /* Populate the version field. */
   version_size = 0;
-  r = RegOpenKeyExW(HKEY_LOCAL_MACHINE,
-                    L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
-                    0,
-                    KEY_QUERY_VALUE,
-                    &registry_key);
+  r = RegOpenKeyExW(
+      HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0, KEY_QUERY_VALUE, &registry_key);
 
   if (r == ERROR_SUCCESS) {
     product_name_w_size = sizeof(product_name_w);
-    r = RegGetValueW(registry_key,
-                     NULL,
-                     L"ProductName",
-                     RRF_RT_REG_SZ,
-                     NULL,
-                     (PVOID) product_name_w,
-                     &product_name_w_size);
+    r = RegGetValueW(
+        registry_key, NULL, L"ProductName", RRF_RT_REG_SZ, NULL, (PVOID)product_name_w, &product_name_w_size);
     RegCloseKey(registry_key);
 
     if (r == ERROR_SUCCESS) {
-      version_size = WideCharToMultiByte(CP_UTF8,
-                                         0,
-                                         product_name_w,
-                                         -1,
-                                         buffer->version,
-                                         sizeof(buffer->version),
-                                         NULL,
-                                         NULL);
+      version_size =
+          WideCharToMultiByte(CP_UTF8, 0, product_name_w, -1, buffer->version, sizeof(buffer->version), NULL, NULL);
       if (version_size == 0) {
         r = uv_translate_sys_error(GetLastError());
         goto error;
@@ -1785,8 +1582,8 @@ int uv_os_uname(uv_utsname_t* buffer) {
   r = snprintf(buffer->sysname,
                sizeof(buffer->sysname),
                "MINGW32_NT-%u.%u",
-               (unsigned int) os_info.dwMajorVersion,
-               (unsigned int) os_info.dwMinorVersion);
+               (unsigned int)os_info.dwMajorVersion,
+               (unsigned int)os_info.dwMinorVersion);
   assert(r < sizeof(buffer->sysname));
 #else
   uv__strscpy(buffer->sysname, "Windows_NT", sizeof(buffer->sysname));
@@ -1796,9 +1593,9 @@ int uv_os_uname(uv_utsname_t* buffer) {
   r = snprintf(buffer->release,
                sizeof(buffer->release),
                "%d.%d.%d",
-               (unsigned int) os_info.dwMajorVersion,
-               (unsigned int) os_info.dwMinorVersion,
-               (unsigned int) os_info.dwBuildNumber);
+               (unsigned int)os_info.dwMajorVersion,
+               (unsigned int)os_info.dwMinorVersion,
+               (unsigned int)os_info.dwBuildNumber);
   assert(r < sizeof(buffer->release));
 
   /* Populate the machine field. */
@@ -1815,8 +1612,7 @@ int uv_os_uname(uv_utsname_t* buffer) {
       uv__strscpy(buffer->machine, "i386", sizeof(buffer->machine));
 
       if (system_info.wProcessorLevel > 3) {
-        processor_level = system_info.wProcessorLevel < 6 ?
-                          system_info.wProcessorLevel : 6;
+        processor_level = system_info.wProcessorLevel < 6 ? system_info.wProcessorLevel : 6;
         buffer->machine[1] = '0' + processor_level;
       }
 
@@ -1857,7 +1653,7 @@ error:
 
 int uv_gettimeofday(uv_timeval64_t* tv) {
   /* Based on https://doxygen.postgresql.org/gettimeofday_8c_source.html */
-  const uint64_t epoch = (uint64_t) 116444736000000000ULL;
+  const uint64_t epoch = (uint64_t)116444736000000000ULL;
   FILETIME file_time;
   ULARGE_INTEGER ularge;
 
@@ -1867,7 +1663,7 @@ int uv_gettimeofday(uv_timeval64_t* tv) {
   GetSystemTimeAsFileTime(&file_time);
   ularge.LowPart = file_time.dwLowDateTime;
   ularge.HighPart = file_time.dwHighDateTime;
-  tv->tv_sec = (int64_t) ((ularge.QuadPart - epoch) / 10000000L);
-  tv->tv_usec = (int32_t) (((ularge.QuadPart - epoch) % 10000000L) / 10);
+  tv->tv_sec = (int64_t)((ularge.QuadPart - epoch) / 10000000L);
+  tv->tv_usec = (int32_t)(((ularge.QuadPart - epoch) % 10000000L) / 10);
   return 0;
 }

@@ -166,7 +166,7 @@ int uv_tty_init(uv_loop_t* loop, uv_tty_t* tty, int fd, int unused) {
   }
 
 skip:
-  uv__stream_init(loop, (uv_stream_t*) tty, UV_TTY);
+  uv__stream_init(loop, (uv_stream_t*)tty, UV_TTY);
 
   /* If anything fails beyond this point we need to remove the handle from
    * the handle queue, since it was added by uv__handle_init in uv_stream_init.
@@ -176,7 +176,7 @@ skip:
     uv__nonblock(fd, 1);
 
 #if defined(__APPLE__)
-  r = uv__stream_try_select((uv_stream_t*) tty, &fd);
+  r = uv__stream_try_select((uv_stream_t*)tty, &fd);
   if (r) {
     int rc = r;
     if (newfd != -1)
@@ -194,7 +194,7 @@ skip:
   if (mode != O_RDONLY)
     flags |= UV_HANDLE_WRITABLE;
 
-  uv__stream_open((uv_stream_t*) tty, fd, flags);
+  uv__stream_open((uv_stream_t*)tty, fd, flags);
   tty->mode = UV_TTY_MODE_NORMAL;
 
   return 0;
@@ -208,8 +208,7 @@ static void uv__tty_make_raw(struct termios* tio) {
    * This implementation of cfmakeraw for Solaris and derivatives is taken from
    * http://www.perkin.org.uk/posts/solaris-portability-cfmakeraw.html.
    */
-  tio->c_iflag &= ~(IMAXBEL | IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR |
-                    IGNCR | ICRNL | IXON);
+  tio->c_iflag &= ~(IMAXBEL | IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
   tio->c_oflag &= ~OPOST;
   tio->c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
   tio->c_cflag &= ~(CSIZE | PARENB);
@@ -223,7 +222,7 @@ int uv_tty_set_mode(uv_tty_t* tty, uv_tty_mode_t mode) {
   struct termios tmp;
   int fd;
 
-  if (tty->mode == (int) mode)
+  if (tty->mode == (int)mode)
     return 0;
 
   fd = uv__stream_fd(tty);
@@ -265,7 +264,6 @@ int uv_tty_set_mode(uv_tty_t* tty, uv_tty_mode_t mode) {
   return 0;
 }
 
-
 int uv_tty_get_winsize(uv_tty_t* tty, int* width, int* height) {
   struct winsize ws;
   int err;
@@ -282,7 +280,6 @@ int uv_tty_get_winsize(uv_tty_t* tty, int* width, int* height) {
 
   return 0;
 }
-
 
 uv_handle_type uv_guess_handle(uv_file file) {
   struct sockaddr sa;
@@ -303,7 +300,7 @@ uv_handle_type uv_guess_handle(uv_file file) {
     return UV_FILE;
 
   if (S_ISCHR(s.st_mode))
-    return UV_FILE;  /* XXX UV_NAMED_PIPE? */
+    return UV_FILE; /* XXX UV_NAMED_PIPE? */
 
   if (S_ISFIFO(s.st_mode))
     return UV_NAMED_PIPE;
@@ -342,7 +339,6 @@ uv_handle_type uv_guess_handle(uv_file file) {
   return UV_UNKNOWN_HANDLE;
 }
 
-
 /* This function is async signal-safe, meaning that it's safe to call from
  * inside a signal handler _unless_ execution was inside uv_tty_set_mode()'s
  * critical section when the signal was raised.
@@ -353,7 +349,7 @@ int uv_tty_reset_mode(void) {
 
   saved_errno = errno;
   if (!uv_spinlock_trylock(&termios_spinlock))
-    return UV_EBUSY;  /* In uv_tty_set_mode(). */
+    return UV_EBUSY; /* In uv_tty_set_mode(). */
 
   err = 0;
   if (orig_termios_fd != -1)

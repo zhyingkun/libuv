@@ -29,14 +29,12 @@
 
 static int uv__dlerror(uv_lib_t* lib);
 
-
 int uv_dlopen(const char* filename, uv_lib_t* lib) {
   dlerror(); /* Reset error status. */
   lib->errmsg = NULL;
   lib->handle = dlopen(filename, RTLD_LAZY);
   return lib->handle ? 0 : uv__dlerror(lib);
 }
-
 
 void uv_dlclose(uv_lib_t* lib) {
   uv__free(lib->errmsg);
@@ -49,18 +47,15 @@ void uv_dlclose(uv_lib_t* lib) {
   }
 }
 
-
 int uv_dlsym(uv_lib_t* lib, const char* name, void** ptr) {
   dlerror(); /* Reset error status. */
   *ptr = dlsym(lib->handle, name);
   return uv__dlerror(lib);
 }
 
-
 const char* uv_dlerror(const uv_lib_t* lib) {
   return lib->errmsg ? lib->errmsg : "no error";
 }
-
 
 static int uv__dlerror(uv_lib_t* lib) {
   const char* errmsg;
@@ -72,8 +67,7 @@ static int uv__dlerror(uv_lib_t* lib) {
   if (errmsg) {
     lib->errmsg = uv__strdup(errmsg);
     return -1;
-  }
-  else {
+  } else {
     lib->errmsg = NULL;
     return 0;
   }

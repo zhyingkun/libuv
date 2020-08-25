@@ -28,42 +28,31 @@
 #include "internal.h"
 #include "handle-inl.h"
 
-
 /*
  * The `child_stdio_buffer` buffer has the following layout:
  *   int number_of_fds
  *   unsigned char crt_flags[number_of_fds]
  *   HANDLE os_handle[number_of_fds]
  */
-#define CHILD_STDIO_SIZE(count)                     \
-    (sizeof(int) +                                  \
-     sizeof(unsigned char) * (count) +              \
-     sizeof(uintptr_t) * (count))
+#define CHILD_STDIO_SIZE(count) (sizeof(int) + sizeof(unsigned char) * (count) + sizeof(uintptr_t) * (count))
 
-#define CHILD_STDIO_COUNT(buffer)                   \
-    *((unsigned int*) (buffer))
+#define CHILD_STDIO_COUNT(buffer) *((unsigned int*)(buffer))
 
-#define CHILD_STDIO_CRT_FLAGS(buffer, fd)           \
-    *((unsigned char*) (buffer) + sizeof(int) + fd)
+#define CHILD_STDIO_CRT_FLAGS(buffer, fd) *((unsigned char*)(buffer) + sizeof(int) + fd)
 
-#define CHILD_STDIO_HANDLE(buffer, fd)              \
-    *((HANDLE*) ((unsigned char*) (buffer) +        \
-                 sizeof(int) +                      \
-                 sizeof(unsigned char) *            \
-                 CHILD_STDIO_COUNT((buffer)) +      \
-                 sizeof(HANDLE) * (fd)))
-
+#define CHILD_STDIO_HANDLE(buffer, fd) \
+  *((HANDLE*)((unsigned char*)(buffer) + sizeof(int) + sizeof(unsigned char) * CHILD_STDIO_COUNT((buffer)) + \
+              sizeof(HANDLE) * (fd)))
 
 /* CRT file descriptor mode flags */
-#define FOPEN       0x01
-#define FEOFLAG     0x02
-#define FCRLF       0x04
-#define FPIPE       0x08
-#define FNOINHERIT  0x10
-#define FAPPEND     0x20
-#define FDEV        0x40
-#define FTEXT       0x80
-
+#define FOPEN 0x01
+#define FEOFLAG 0x02
+#define FCRLF 0x04
+#define FPIPE 0x08
+#define FNOINHERIT 0x10
+#define FAPPEND 0x20
+#define FDEV 0x40
+#define FTEXT 0x80
 
 /*
  * Clear the HANDLE_FLAG_INHERIT flag from all HANDLEs that were inherited
@@ -94,9 +83,8 @@ void uv_disable_stdio_inheritance(void) {
     uv__stdio_noinherit(si.lpReserved2);
 }
 
-
-static int uv__create_stdio_pipe_pair(uv_loop_t* loop,
-    uv_pipe_t* server_pipe, HANDLE* child_pipe_ptr, unsigned int flags) {
+static int uv__create_stdio_pipe_pair(uv_loop_t* loop, uv_pipe_t* server_pipe, HANDLE* child_pipe_ptr,
+                                      unsigned int flags) {
   char pipe_name[64];
   SECURITY_ATTRIBUTES sa;
   DWORD server_access = 0;
@@ -118,11 +106,7 @@ static int uv__create_stdio_pipe_pair(uv_loop_t* loop,
   }
 
   /* Create server pipe handle. */
-  err = uv_stdio_pipe_server(loop,
-                             server_pipe,
-                             server_access,
-                             pipe_name,
-                             sizeof(pipe_name));
+  err = uv_stdio_pipe_server(loop, server_pipe, server_access, pipe_name, sizeof(pipe_name));
   if (err)
     goto error;
 
@@ -132,13 +116,7 @@ static int uv__create_stdio_pipe_pair(uv_loop_t* loop,
   sa.bInheritHandle = TRUE;
 
   overlap = server_pipe->ipc || (flags & UV_OVERLAPPED_PIPE);
-  child_pipe = CreateFileA(pipe_name,
-                           client_access,
-                           0,
-                           &sa,
-                           OPEN_EXISTING,
-                           overlap ? FILE_FLAG_OVERLAPPED : 0,
-                           NULL);
+  child_pipe = CreateFileA(pipe_name, client_access, 0, &sa, OPEN_EXISTING, overlap ? FILE_FLAG_OVERLAPPED : 0, NULL);
   if (child_pipe == INVALID_HANDLE_VALUE) {
     err = GetLastError();
     goto error;
@@ -148,13 +126,7 @@ static int uv__create_stdio_pipe_pair(uv_loop_t* loop,
   /* Validate that the pipe was opened in the right mode. */
   {
     DWORD mode;
-    BOOL r = GetNamedPipeHandleState(child_pipe,
-                                     &mode,
-                                     NULL,
-                                     NULL,
-                                     NULL,
-                                     NULL,
-                                     0);
+    BOOL r = GetNamedPipeHandleState(child_pipe, &mode, NULL, NULL, NULL, NULL, 0);
     assert(r == TRUE);
     assert(mode == (PIPE_READMODE_BYTE | PIPE_WAIT));
   }
@@ -178,7 +150,7 @@ static int uv__create_stdio_pipe_pair(uv_loop_t* loop,
   *child_pipe_ptr = child_pipe;
   return 0;
 
- error:
+error:
   if (server_pipe->handle != INVALID_HANDLE_VALUE) {
     uv_pipe_cleanup(loop, server_pipe);
   }
@@ -190,39 +162,28 @@ static int uv__create_stdio_pipe_pair(uv_loop_t* loop,
   return err;
 }
 
-
 static int uv__duplicate_handle(uv_loop_t* loop, HANDLE handle, HANDLE* dup) {
   HANDLE current_process;
-
 
   /* _get_osfhandle will sometimes return -2 in case of an error. This seems to
    * happen when fd <= 2 and the process' corresponding stdio handle is set to
    * NULL. Unfortunately DuplicateHandle will happily duplicate (HANDLE) -2, so
    * this situation goes unnoticed until someone tries to use the duplicate.
    * Therefore we filter out known-invalid handles here. */
-  if (handle == INVALID_HANDLE_VALUE ||
-      handle == NULL ||
-      handle == (HANDLE) -2) {
+  if (handle == INVALID_HANDLE_VALUE || handle == NULL || handle == (HANDLE)-2) {
     *dup = INVALID_HANDLE_VALUE;
     return ERROR_INVALID_HANDLE;
   }
 
   current_process = GetCurrentProcess();
 
-  if (!DuplicateHandle(current_process,
-                       handle,
-                       current_process,
-                       dup,
-                       0,
-                       TRUE,
-                       DUPLICATE_SAME_ACCESS)) {
+  if (!DuplicateHandle(current_process, handle, current_process, dup, 0, TRUE, DUPLICATE_SAME_ACCESS)) {
     *dup = INVALID_HANDLE_VALUE;
     return GetLastError();
   }
 
   return 0;
 }
-
 
 static int uv__duplicate_fd(uv_loop_t* loop, int fd, HANDLE* dup) {
   HANDLE handle;
@@ -236,9 +197,7 @@ static int uv__duplicate_fd(uv_loop_t* loop, int fd, HANDLE* dup) {
   return uv__duplicate_handle(loop, handle, dup);
 }
 
-
-int uv__create_nul_handle(HANDLE* handle_ptr,
-    DWORD access) {
+int uv__create_nul_handle(HANDLE* handle_ptr, DWORD access) {
   HANDLE handle;
   SECURITY_ATTRIBUTES sa;
 
@@ -246,13 +205,7 @@ int uv__create_nul_handle(HANDLE* handle_ptr,
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;
 
-  handle = CreateFileW(L"NUL",
-                       access,
-                       FILE_SHARE_READ | FILE_SHARE_WRITE,
-                       &sa,
-                       OPEN_EXISTING,
-                       0,
-                       NULL);
+  handle = CreateFileW(L"NUL", access, FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, OPEN_EXISTING, 0, NULL);
   if (handle == INVALID_HANDLE_VALUE) {
     return GetLastError();
   }
@@ -261,10 +214,7 @@ int uv__create_nul_handle(HANDLE* handle_ptr,
   return 0;
 }
 
-
-int uv__stdio_create(uv_loop_t* loop,
-                     const uv_process_options_t* options,
-                     BYTE** buffer_ptr) {
+int uv__stdio_create(uv_loop_t* loop, const uv_process_options_t* options, BYTE** buffer_ptr) {
   BYTE* buffer;
   int count, i;
   int err;
@@ -280,7 +230,7 @@ int uv__stdio_create(uv_loop_t* loop,
   }
 
   /* Allocate the child stdio buffer */
-  buffer = (BYTE*) uv__malloc(CHILD_STDIO_SIZE(count));
+  buffer = (BYTE*)uv__malloc(CHILD_STDIO_SIZE(count));
   if (buffer == NULL) {
     return ERROR_OUTOFMEMORY;
   }
@@ -301,8 +251,7 @@ int uv__stdio_create(uv_loop_t* loop,
       fdopt.flags = UV_IGNORE;
     }
 
-    switch (fdopt.flags & (UV_IGNORE | UV_CREATE_PIPE | UV_INHERIT_FD |
-            UV_INHERIT_STREAM)) {
+    switch (fdopt.flags & (UV_IGNORE | UV_CREATE_PIPE | UV_INHERIT_FD | UV_INHERIT_STREAM)) {
       case UV_IGNORE:
         /* Starting a process with no stdin/stout/stderr can confuse it. So no
          * matter what the user specified, we make sure the first three FDs are
@@ -311,11 +260,9 @@ int uv__stdio_create(uv_loop_t* loop,
          * handles in the stdio buffer are initialized with.
          * INVALID_HANDLE_VALUE, which should be okay. */
         if (i <= 2) {
-          DWORD access = (i == 0) ? FILE_GENERIC_READ :
-                                    FILE_GENERIC_WRITE | FILE_READ_ATTRIBUTES;
+          DWORD access = (i == 0) ? FILE_GENERIC_READ : FILE_GENERIC_WRITE | FILE_READ_ATTRIBUTES;
 
-          err = uv__create_nul_handle(&CHILD_STDIO_HANDLE(buffer, i),
-                                      access);
+          err = uv__create_nul_handle(&CHILD_STDIO_HANDLE(buffer, i), access);
           if (err)
             goto error;
 
@@ -327,7 +274,7 @@ int uv__stdio_create(uv_loop_t* loop,
         /* Create a pair of two connected pipe ends; one end is turned into an
          * uv_pipe_t for use by the parent. The other one is given to the
          * child. */
-        uv_pipe_t* parent_pipe = (uv_pipe_t*) fdopt.data.stream;
+        uv_pipe_t* parent_pipe = (uv_pipe_t*)fdopt.data.stream;
         HANDLE child_pipe = INVALID_HANDLE_VALUE;
 
         /* Create a new, connected pipe pair. stdio[i]. stream should point to
@@ -336,10 +283,7 @@ int uv__stdio_create(uv_loop_t* loop,
         assert(!(fdopt.data.stream->flags & UV_HANDLE_CONNECTION));
         assert(!(fdopt.data.stream->flags & UV_HANDLE_PIPESERVER));
 
-        err = uv__create_stdio_pipe_pair(loop,
-                                         parent_pipe,
-                                         &child_pipe,
-                                         fdopt.flags);
+        err = uv__create_stdio_pipe_pair(loop, parent_pipe, &child_pipe, fdopt.flags);
         if (err)
           goto error;
 
@@ -406,19 +350,17 @@ int uv__stdio_create(uv_loop_t* loop,
 
         /* Leech the handle out of the stream. */
         if (stream->type == UV_TTY) {
-          stream_handle = ((uv_tty_t*) stream)->handle;
+          stream_handle = ((uv_tty_t*)stream)->handle;
           crt_flags = FOPEN | FDEV;
-        } else if (stream->type == UV_NAMED_PIPE &&
-                   stream->flags & UV_HANDLE_CONNECTION) {
-          stream_handle = ((uv_pipe_t*) stream)->handle;
+        } else if (stream->type == UV_NAMED_PIPE && stream->flags & UV_HANDLE_CONNECTION) {
+          stream_handle = ((uv_pipe_t*)stream)->handle;
           crt_flags = FOPEN | FPIPE;
         } else {
           stream_handle = INVALID_HANDLE_VALUE;
           crt_flags = 0;
         }
 
-        if (stream_handle == NULL ||
-            stream_handle == INVALID_HANDLE_VALUE) {
+        if (stream_handle == NULL || stream_handle == INVALID_HANDLE_VALUE) {
           /* The handle is already closed, or not yet created, or the stream
            * type is not supported. */
           err = ERROR_NOT_SUPPORTED;
@@ -441,14 +383,13 @@ int uv__stdio_create(uv_loop_t* loop,
     }
   }
 
-  *buffer_ptr  = buffer;
+  *buffer_ptr = buffer;
   return 0;
 
- error:
+error:
   uv__stdio_destroy(buffer);
   return err;
 }
-
 
 void uv__stdio_destroy(BYTE* buffer) {
   int i, count;
@@ -464,7 +405,6 @@ void uv__stdio_destroy(BYTE* buffer) {
   uv__free(buffer);
 }
 
-
 void uv__stdio_noinherit(BYTE* buffer) {
   int i, count;
 
@@ -476,7 +416,6 @@ void uv__stdio_noinherit(BYTE* buffer) {
     }
   }
 }
-
 
 int uv__stdio_verify(BYTE* buffer, WORD size) {
   unsigned int count;
@@ -501,11 +440,9 @@ int uv__stdio_verify(BYTE* buffer, WORD size) {
   return 1;
 }
 
-
 WORD uv__stdio_size(BYTE* buffer) {
-  return (WORD) CHILD_STDIO_SIZE(CHILD_STDIO_COUNT((buffer)));
+  return (WORD)CHILD_STDIO_SIZE(CHILD_STDIO_COUNT((buffer)));
 }
-
 
 HANDLE uv__stdio_handle(BYTE* buffer, int fd) {
   return CHILD_STDIO_HANDLE(buffer, fd);

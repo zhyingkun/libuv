@@ -35,11 +35,9 @@ static struct {
   size_t len;
 } process_title;
 
-
 static void init_process_title_mutex_once(void) {
   uv_mutex_init(&process_title_mutex);
 }
-
 
 char** uv_setup_args(int argc, char** argv) {
   char** new_argv;
@@ -62,7 +60,7 @@ char** uv_setup_args(int argc, char** argv) {
 #else
   process_title.str = argv[0];
   process_title.len = argv[argc - 1] + strlen(argv[argc - 1]) - argv[0];
-  assert(process_title.len + 1 == size);  /* argv memory should be adjacent. */
+  assert(process_title.len + 1 == size); /* argv memory should be adjacent. */
 #endif
 
   /* Add space for the argv pointers. */
@@ -74,7 +72,7 @@ char** uv_setup_args(int argc, char** argv) {
   args_mem = new_argv;
 
   /* Copy over the strings and set up the pointer table. */
-  s = (char*) &new_argv[argc + 1];
+  s = (char*)&new_argv[argc + 1];
   for (i = 0; i < argc; i++) {
     size = strlen(argv[i]) + 1;
     memcpy(s, argv[i], size);
@@ -85,7 +83,6 @@ char** uv_setup_args(int argc, char** argv) {
 
   return new_argv;
 }
-
 
 int uv_set_process_title(const char* title) {
   uv_once(&process_title_mutex_once, init_process_title_mutex_once);
@@ -101,7 +98,6 @@ int uv_set_process_title(const char* title) {
 
   return 0;
 }
-
 
 int uv_get_process_title(char* buffer, size_t size) {
   if (buffer == NULL || size == 0)
@@ -125,8 +121,7 @@ int uv_get_process_title(char* buffer, size_t size) {
   return 0;
 }
 
-
 UV_DESTRUCTOR(static void free_args_mem(void)) {
-  uv__free(args_mem);  /* Keep valgrind happy. */
+  uv__free(args_mem); /* Keep valgrind happy. */
   args_mem = NULL;
 }

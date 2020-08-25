@@ -28,101 +28,97 @@
 #include <limits.h> /* _POSIX_PATH_MAX, PATH_MAX */
 #include <stdlib.h> /* abort */
 #include <string.h> /* strrchr */
-#include <fcntl.h>  /* O_CLOEXEC, may be */
+#include <fcntl.h> /* O_CLOEXEC, may be */
 #include <stdio.h>
 #include <errno.h>
 
 #if defined(__STRICT_ANSI__)
-# define inline __inline
+#define inline __inline
 #endif
 
 #if defined(__linux__)
-# include "linux-syscalls.h"
+#include "linux-syscalls.h"
 #endif /* __linux__ */
 
 #if defined(__MVS__)
-# include "os390-syscalls.h"
+#include "os390-syscalls.h"
 #endif /* __MVS__ */
 
 #if defined(__sun)
-# include <sys/port.h>
-# include <port.h>
+#include <sys/port.h>
+#include <port.h>
 #endif /* __sun */
 
 #if defined(_AIX)
-# define reqevents events
-# define rtnevents revents
-# include <sys/poll.h>
+#define reqevents events
+#define rtnevents revents
+#include <sys/poll.h>
 #else
-# include <poll.h>
+#include <poll.h>
 #endif /* _AIX */
 
 #if defined(__APPLE__) && !TARGET_OS_IPHONE
-# include <AvailabilityMacros.h>
+#include <AvailabilityMacros.h>
 #endif
 
 #if defined(_POSIX_PATH_MAX)
-# define UV__PATH_MAX _POSIX_PATH_MAX
+#define UV__PATH_MAX _POSIX_PATH_MAX
 #elif defined(PATH_MAX)
-# define UV__PATH_MAX PATH_MAX
+#define UV__PATH_MAX PATH_MAX
 #else
-# define UV__PATH_MAX 8192
+#define UV__PATH_MAX 8192
 #endif
 
 #if defined(__ANDROID__)
 int uv__pthread_sigmask(int how, const sigset_t* set, sigset_t* oset);
-# ifdef pthread_sigmask
-# undef pthread_sigmask
-# endif
-# define pthread_sigmask(how, set, oldset) uv__pthread_sigmask(how, set, oldset)
+#ifdef pthread_sigmask
+#undef pthread_sigmask
+#endif
+#define pthread_sigmask(how, set, oldset) uv__pthread_sigmask(how, set, oldset)
 #endif
 
-#define ACCESS_ONCE(type, var)                                                \
-  (*(volatile type*) &(var))
+#define ACCESS_ONCE(type, var) (*(volatile type*)&(var))
 
-#define ROUND_UP(a, b)                                                        \
-  ((a) % (b) ? ((a) + (b)) - ((a) % (b)) : (a))
+#define ROUND_UP(a, b) ((a) % (b) ? ((a) + (b)) - ((a) % (b)) : (a))
 
-#define UNREACHABLE()                                                         \
-  do {                                                                        \
-    assert(0 && "unreachable code");                                          \
-    abort();                                                                  \
-  }                                                                           \
-  while (0)
+#define UNREACHABLE() \
+  do { \
+    assert(0 && "unreachable code"); \
+    abort(); \
+  } while (0)
 
-#define SAVE_ERRNO(block)                                                     \
-  do {                                                                        \
-    int _saved_errno = errno;                                                 \
-    do { block; } while (0);                                                  \
-    errno = _saved_errno;                                                     \
-  }                                                                           \
-  while (0)
+#define SAVE_ERRNO(block) \
+  do { \
+    int _saved_errno = errno; \
+    do { \
+      block; \
+    } while (0); \
+    errno = _saved_errno; \
+  } while (0)
 
 /* The __clang__ and __INTEL_COMPILER checks are superfluous because they
  * define __GNUC__. They are here to convey to you, dear reader, that these
  * macros are enabled when compiling with clang or icc.
  */
-#if defined(__clang__) ||                                                     \
-    defined(__GNUC__) ||                                                      \
-    defined(__INTEL_COMPILER)
-# define UV_DESTRUCTOR(declaration) __attribute__((destructor)) declaration
-# define UV_UNUSED(declaration)     __attribute__((unused)) declaration
+#if defined(__clang__) || defined(__GNUC__) || defined(__INTEL_COMPILER)
+#define UV_DESTRUCTOR(declaration) __attribute__((destructor)) declaration
+#define UV_UNUSED(declaration) __attribute__((unused)) declaration
 #else
-# define UV_DESTRUCTOR(declaration) declaration
-# define UV_UNUSED(declaration)     declaration
+#define UV_DESTRUCTOR(declaration) declaration
+#define UV_UNUSED(declaration) declaration
 #endif
 
 /* Leans on the fact that, on Linux, POLLRDHUP == EPOLLRDHUP. */
 #ifdef POLLRDHUP
-# define UV__POLLRDHUP POLLRDHUP
+#define UV__POLLRDHUP POLLRDHUP
 #else
-# define UV__POLLRDHUP 0x2000
+#define UV__POLLRDHUP 0x2000
 #endif
 
 #ifdef POLLPRI
-# define UV__POLLPRI POLLPRI
+#define UV__POLLPRI POLLPRI
 #else
-# define UV__POLLPRI 0
+#define UV__POLLPRI 0
 #endif
 
 #if !defined(O_CLOEXEC) && defined(__FreeBSD__)
@@ -130,25 +126,20 @@ int uv__pthread_sigmask(int how, const sigset_t* set, sigset_t* oset);
  * It may be that we are just missing `__POSIX_VISIBLE >= 200809`.
  * Try using fixed value const and give up, if it doesn't work
  */
-# define O_CLOEXEC 0x00100000
+#define O_CLOEXEC 0x00100000
 #endif
 
 typedef struct uv__stream_queued_fds_s uv__stream_queued_fds_t;
 
 /* loop flags */
-enum {
-  UV_LOOP_BLOCK_SIGPROF = 1
-};
+enum { UV_LOOP_BLOCK_SIGPROF = 1 };
 
 /* flags of excluding ifaddr */
-enum {
-  UV__EXCLUDE_IFPHYS,
-  UV__EXCLUDE_IFADDR
-};
+enum { UV__EXCLUDE_IFPHYS, UV__EXCLUDE_IFADDR };
 
 typedef enum {
-  UV_CLOCK_PRECISE = 0,  /* Use the highest resolution clock available. */
-  UV_CLOCK_FAST = 1      /* Use the fastest clock with <= 1ms granularity. */
+  UV_CLOCK_PRECISE = 0, /* Use the highest resolution clock available. */
+  UV_CLOCK_FAST = 1 /* Use the fastest clock with <= 1ms granularity. */
 } uv_clocktype_t;
 
 struct uv__stream_queued_fds_s {
@@ -157,15 +148,8 @@ struct uv__stream_queued_fds_s {
   int fds[1];
 };
 
-
-#if defined(_AIX) || \
-    defined(__APPLE__) || \
-    defined(__DragonFly__) || \
-    defined(__FreeBSD__) || \
-    defined(__FreeBSD_kernel__) || \
-    defined(__linux__) || \
-    defined(__OpenBSD__) || \
-    defined(__NetBSD__)
+#if defined(_AIX) || defined(__APPLE__) || defined(__DragonFly__) || defined(__FreeBSD__) || \
+    defined(__FreeBSD_kernel__) || defined(__linux__) || defined(__OpenBSD__) || defined(__NetBSD__)
 #define uv__cloexec uv__cloexec_ioctl
 #define uv__nonblock uv__nonblock_ioctl
 #else
@@ -194,7 +178,7 @@ int uv__close(int fd); /* preserves errno */
 int uv__close_nocheckstdio(int fd);
 int uv__close_nocancel(int fd);
 int uv__socket(int domain, int type, int protocol);
-ssize_t uv__recvmsg(int fd, struct msghdr *msg, int flags);
+ssize_t uv__recvmsg(int fd, struct msghdr* msg, int flags);
 void uv__make_close_pending(uv_handle_t* handle);
 int uv__getiovmax(void);
 
@@ -213,15 +197,13 @@ int uv__fd_exists(uv_loop_t* loop, int fd);
 void uv__async_stop(uv_loop_t* loop);
 int uv__async_fork(uv_loop_t* loop);
 
-
 /* loop */
 void uv__run_idle(uv_loop_t* loop);
 void uv__run_check(uv_loop_t* loop);
 void uv__run_prepare(uv_loop_t* loop);
 
 /* stream */
-void uv__stream_init(uv_loop_t* loop, uv_stream_t* stream,
-    uv_handle_type type);
+void uv__stream_init(uv_loop_t* loop, uv_stream_t* stream, uv_handle_type type);
 int uv__stream_open(uv_stream_t*, int fd, int flags);
 void uv__stream_destroy(uv_stream_t* stream);
 #if defined(__APPLE__)
@@ -270,18 +252,17 @@ uv_handle_type uv__handle_type(int fd);
 FILE* uv__open_file(const char* path);
 int uv__getpwuid_r(uv_passwd_t* pwd);
 
-
 #if defined(__APPLE__)
 int uv___stream_fd(const uv_stream_t* handle);
-#define uv__stream_fd(handle) (uv___stream_fd((const uv_stream_t*) (handle)))
+#define uv__stream_fd(handle) (uv___stream_fd((const uv_stream_t*)(handle)))
 #else
 #define uv__stream_fd(handle) ((handle)->io_watcher.fd)
 #endif /* defined(__APPLE__) */
 
 #ifdef UV__O_NONBLOCK
-# define UV__F_NONBLOCK UV__O_NONBLOCK
+#define UV__F_NONBLOCK UV__O_NONBLOCK
 #else
-# define UV__F_NONBLOCK 1
+#define UV__F_NONBLOCK 1
 #endif
 
 int uv__make_socketpair(int fds[2], int flags);
@@ -306,7 +287,7 @@ UV_UNUSED(static char* uv__basename_r(const char* path)) {
 
   s = strrchr(path, '/');
   if (s == NULL)
-    return (char*) path;
+    return (char*)path;
 
   return s + 1;
 }
@@ -317,9 +298,6 @@ int uv__inotify_fork(uv_loop_t* loop, void* old_watchers);
 
 typedef int (*uv__peersockfunc)(int, struct sockaddr*, socklen_t*);
 
-int uv__getsockpeername(const uv_handle_t* handle,
-                        uv__peersockfunc func,
-                        struct sockaddr* name,
-                        int* namelen);
+int uv__getsockpeername(const uv_handle_t* handle, uv__peersockfunc func, struct sockaddr* name, int* namelen);
 
 #endif /* UV_UNIX_INTERNAL_H_ */

@@ -11,9 +11,7 @@ void uv__init_detect_system_wakeup(void) {
   uv__register_system_resume_callback();
 }
 
-static ULONG CALLBACK uv__system_resume_callback(PVOID Context,
-                                                 ULONG Type,
-                                                 PVOID Setting) {
+static ULONG CALLBACK uv__system_resume_callback(PVOID Context, ULONG Type, PVOID Setting) {
   if (Type == PBT_APMRESUMESUSPEND || Type == PBT_APMRESUMEAUTOMATIC)
     uv__wake_all_loops();
 
@@ -29,7 +27,5 @@ static void uv__register_system_resume_callback(void) {
 
   recipient.Callback = uv__system_resume_callback;
   recipient.Context = NULL;
-  (*pPowerRegisterSuspendResumeNotification)(DEVICE_NOTIFY_CALLBACK,
-                                             &recipient,
-                                             &registration_handle);
+  (*pPowerRegisterSuspendResumeNotification)(DEVICE_NOTIFY_CALLBACK, &recipient, &registration_handle);
 }

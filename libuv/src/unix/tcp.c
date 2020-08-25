@@ -27,7 +27,6 @@
 #include <assert.h>
 #include <errno.h>
 
-
 static int new_socket(uv_tcp_t* handle, int domain, unsigned long flags) {
   struct sockaddr_storage saddr;
   socklen_t slen;
@@ -39,7 +38,7 @@ static int new_socket(uv_tcp_t* handle, int domain, unsigned long flags) {
     return err;
   sockfd = err;
 
-  err = uv__stream_open((uv_stream_t*) handle, sockfd, flags);
+  err = uv__stream_open((uv_stream_t*)handle, sockfd, flags);
   if (err) {
     uv__close(sockfd);
     return err;
@@ -49,12 +48,12 @@ static int new_socket(uv_tcp_t* handle, int domain, unsigned long flags) {
     /* Bind this new socket to an arbitrary port */
     slen = sizeof(saddr);
     memset(&saddr, 0, sizeof(saddr));
-    if (getsockname(uv__stream_fd(handle), (struct sockaddr*) &saddr, &slen)) {
+    if (getsockname(uv__stream_fd(handle), (struct sockaddr*)&saddr, &slen)) {
       uv__close(sockfd);
       return UV__ERR(errno);
     }
 
-    if (bind(uv__stream_fd(handle), (struct sockaddr*) &saddr, slen)) {
+    if (bind(uv__stream_fd(handle), (struct sockaddr*)&saddr, slen)) {
       uv__close(sockfd);
       return UV__ERR(errno);
     }
@@ -62,7 +61,6 @@ static int new_socket(uv_tcp_t* handle, int domain, unsigned long flags) {
 
   return 0;
 }
-
 
 static int maybe_new_socket(uv_tcp_t* handle, int domain, unsigned long flags) {
   struct sockaddr_storage saddr;
@@ -86,20 +84,18 @@ static int maybe_new_socket(uv_tcp_t* handle, int domain, unsigned long flags) {
       /* Query to see if tcp socket is bound. */
       slen = sizeof(saddr);
       memset(&saddr, 0, sizeof(saddr));
-      if (getsockname(uv__stream_fd(handle), (struct sockaddr*) &saddr, &slen))
+      if (getsockname(uv__stream_fd(handle), (struct sockaddr*)&saddr, &slen))
         return UV__ERR(errno);
 
-      if ((saddr.ss_family == AF_INET6 &&
-          ((struct sockaddr_in6*) &saddr)->sin6_port != 0) ||
-          (saddr.ss_family == AF_INET &&
-          ((struct sockaddr_in*) &saddr)->sin_port != 0)) {
+      if ((saddr.ss_family == AF_INET6 && ((struct sockaddr_in6*)&saddr)->sin6_port != 0) ||
+          (saddr.ss_family == AF_INET && ((struct sockaddr_in*)&saddr)->sin_port != 0)) {
         /* Handle is already bound to a port. */
         handle->flags |= flags;
         return 0;
       }
 
       /* Bind to arbitrary port */
-      if (bind(uv__stream_fd(handle), (struct sockaddr*) &saddr, slen))
+      if (bind(uv__stream_fd(handle), (struct sockaddr*)&saddr, slen))
         return UV__ERR(errno);
     }
 
@@ -109,7 +105,6 @@ static int maybe_new_socket(uv_tcp_t* handle, int domain, unsigned long flags) {
 
   return new_socket(handle, domain, flags);
 }
-
 
 int uv_tcp_init_ex(uv_loop_t* loop, uv_tcp_t* tcp, unsigned int flags) {
   int domain;
@@ -139,16 +134,11 @@ int uv_tcp_init_ex(uv_loop_t* loop, uv_tcp_t* tcp, unsigned int flags) {
   return 0;
 }
 
-
 int uv_tcp_init(uv_loop_t* loop, uv_tcp_t* tcp) {
   return uv_tcp_init_ex(loop, tcp, AF_UNSPEC);
 }
 
-
-int uv__tcp_bind(uv_tcp_t* tcp,
-                 const struct sockaddr* addr,
-                 unsigned int addrlen,
-                 unsigned int flags) {
+int uv__tcp_bind(uv_tcp_t* tcp, const struct sockaddr* addr, unsigned int addrlen, unsigned int flags) {
   int err;
   int on;
 
@@ -168,11 +158,7 @@ int uv__tcp_bind(uv_tcp_t* tcp,
 #ifdef IPV6_V6ONLY
   if (addr->sa_family == AF_INET6) {
     on = (flags & UV_TCP_IPV6ONLY) != 0;
-    if (setsockopt(tcp->io_watcher.fd,
-                   IPPROTO_IPV6,
-                   IPV6_V6ONLY,
-                   &on,
-                   sizeof on) == -1) {
+    if (setsockopt(tcp->io_watcher.fd, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof on) == -1) {
 #if defined(__MVS__)
       if (errno == EOPNOTSUPP)
         return UV_EINVAL;
@@ -200,11 +186,7 @@ int uv__tcp_bind(uv_tcp_t* tcp,
   return 0;
 }
 
-
-int uv__tcp_connect(uv_connect_t* req,
-                    uv_tcp_t* handle,
-                    const struct sockaddr* addr,
-                    unsigned int addrlen,
+int uv__tcp_connect(uv_connect_t* req, uv_tcp_t* handle, const struct sockaddr* addr, unsigned int addrlen,
                     uv_connect_cb cb) {
   int err;
   int r;
@@ -212,11 +194,9 @@ int uv__tcp_connect(uv_connect_t* req,
   assert(handle->type == UV_TCP);
 
   if (handle->connect_req != NULL)
-    return UV_EALREADY;  /* FIXME(bnoordhuis) UV_EINVAL or maybe UV_EBUSY. */
+    return UV_EALREADY; /* FIXME(bnoordhuis) UV_EINVAL or maybe UV_EBUSY. */
 
-  err = maybe_new_socket(handle,
-                         addr->sa_family,
-                         UV_HANDLE_READABLE | UV_HANDLE_WRITABLE);
+  err = maybe_new_socket(handle, addr->sa_family, UV_HANDLE_READABLE | UV_HANDLE_WRITABLE);
   if (err)
     return err;
 
@@ -237,13 +217,13 @@ int uv__tcp_connect(uv_connect_t* req,
       ; /* not an error */
     else if (errno == ECONNREFUSED
 #if defined(__OpenBSD__)
-      || errno == EINVAL
+             || errno == EINVAL
 #endif
-      )
-    /* If we get ECONNREFUSED (Solaris) or EINVAL (OpenBSD) wait until the
-     * next tick to report the error. Solaris and OpenBSD wants to report
-     * immediately -- other unixes want to wait.
-     */
+    )
+      /* If we get ECONNREFUSED (Solaris) or EINVAL (OpenBSD) wait until the
+       * next tick to report the error. Solaris and OpenBSD wants to report
+       * immediately -- other unixes want to wait.
+       */
       handle->delayed_error = UV__ERR(ECONNREFUSED);
     else
       return UV__ERR(errno);
@@ -251,7 +231,7 @@ int uv__tcp_connect(uv_connect_t* req,
 
   uv__req_init(handle->loop, req, UV_CONNECT);
   req->cb = cb;
-  req->handle = (uv_stream_t*) handle;
+  req->handle = (uv_stream_t*)handle;
   QUEUE_INIT(&req->queue);
   handle->connect_req = req;
 
@@ -263,7 +243,6 @@ int uv__tcp_connect(uv_connect_t* req,
   return 0;
 }
 
-
 int uv_tcp_open(uv_tcp_t* handle, uv_os_sock_t sock) {
   int err;
 
@@ -274,39 +253,24 @@ int uv_tcp_open(uv_tcp_t* handle, uv_os_sock_t sock) {
   if (err)
     return err;
 
-  return uv__stream_open((uv_stream_t*)handle,
-                         sock,
-                         UV_HANDLE_READABLE | UV_HANDLE_WRITABLE);
+  return uv__stream_open((uv_stream_t*)handle, sock, UV_HANDLE_READABLE | UV_HANDLE_WRITABLE);
 }
 
-
-int uv_tcp_getsockname(const uv_tcp_t* handle,
-                       struct sockaddr* name,
-                       int* namelen) {
+int uv_tcp_getsockname(const uv_tcp_t* handle, struct sockaddr* name, int* namelen) {
 
   if (handle->delayed_error)
     return handle->delayed_error;
 
-  return uv__getsockpeername((const uv_handle_t*) handle,
-                             getsockname,
-                             name,
-                             namelen);
+  return uv__getsockpeername((const uv_handle_t*)handle, getsockname, name, namelen);
 }
 
-
-int uv_tcp_getpeername(const uv_tcp_t* handle,
-                       struct sockaddr* name,
-                       int* namelen) {
+int uv_tcp_getpeername(const uv_tcp_t* handle, struct sockaddr* name, int* namelen) {
 
   if (handle->delayed_error)
     return handle->delayed_error;
 
-  return uv__getsockpeername((const uv_handle_t*) handle,
-                             getpeername,
-                             name,
-                             namelen);
+  return uv__getsockpeername((const uv_handle_t*)handle, getpeername, name, namelen);
 }
-
 
 int uv_tcp_listen(uv_tcp_t* tcp, int backlog, uv_connection_cb cb) {
   static int single_accept = -1;
@@ -318,7 +282,7 @@ int uv_tcp_listen(uv_tcp_t* tcp, int backlog, uv_connection_cb cb) {
 
   if (single_accept == -1) {
     const char* val = getenv("UV_TCP_SINGLE_ACCEPT");
-    single_accept = (val != NULL && atoi(val) != 0);  /* Off by default. */
+    single_accept = (val != NULL && atoi(val) != 0); /* Off by default. */
   }
 
   if (single_accept)
@@ -349,13 +313,11 @@ int uv_tcp_listen(uv_tcp_t* tcp, int backlog, uv_connection_cb cb) {
   return 0;
 }
 
-
 int uv__tcp_nodelay(int fd, int on) {
   if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &on, sizeof(on)))
     return UV__ERR(errno);
   return 0;
 }
-
 
 int uv__tcp_keepalive(int fd, int on, unsigned int delay) {
   if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on)))
@@ -366,10 +328,10 @@ int uv__tcp_keepalive(int fd, int on, unsigned int delay) {
     return UV__ERR(errno);
 #endif
 
-  /* Solaris/SmartOS, if you don't support keep-alive,
-   * then don't advertise it in your system headers...
-   */
-  /* FIXME(bnoordhuis) That's possibly because sizeof(delay) should be 1. */
+    /* Solaris/SmartOS, if you don't support keep-alive,
+     * then don't advertise it in your system headers...
+     */
+    /* FIXME(bnoordhuis) That's possibly because sizeof(delay) should be 1. */
 #if defined(TCP_KEEPALIVE) && !defined(__sun)
   if (on && setsockopt(fd, IPPROTO_TCP, TCP_KEEPALIVE, &delay, sizeof(delay)))
     return UV__ERR(errno);
@@ -377,7 +339,6 @@ int uv__tcp_keepalive(int fd, int on, unsigned int delay) {
 
   return 0;
 }
-
 
 int uv_tcp_nodelay(uv_tcp_t* handle, int on) {
   int err;
@@ -396,12 +357,11 @@ int uv_tcp_nodelay(uv_tcp_t* handle, int on) {
   return 0;
 }
 
-
 int uv_tcp_keepalive(uv_tcp_t* handle, int on, unsigned int delay) {
   int err;
 
   if (uv__stream_fd(handle) != -1) {
-    err =uv__tcp_keepalive(uv__stream_fd(handle), on, delay);
+    err = uv__tcp_keepalive(uv__stream_fd(handle), on, delay);
     if (err)
       return err;
   }
@@ -418,7 +378,6 @@ int uv_tcp_keepalive(uv_tcp_t* handle, int on, unsigned int delay) {
   return 0;
 }
 
-
 int uv_tcp_simultaneous_accepts(uv_tcp_t* handle, int enable) {
   if (enable)
     handle->flags &= ~UV_HANDLE_TCP_SINGLE_ACCEPT;
@@ -426,7 +385,6 @@ int uv_tcp_simultaneous_accepts(uv_tcp_t* handle, int enable) {
     handle->flags |= UV_HANDLE_TCP_SINGLE_ACCEPT;
   return 0;
 }
-
 
 void uv__tcp_close(uv_tcp_t* handle) {
   uv__stream_close((uv_stream_t*)handle);
