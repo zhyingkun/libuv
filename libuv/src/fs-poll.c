@@ -55,18 +55,13 @@ static void timer_close_cb(uv_handle_t* handle);
 
 static uv_stat_t zero_statbuf;
 
-
 int uv_fs_poll_init(uv_loop_t* loop, uv_fs_poll_t* handle) {
   uv__handle_init(loop, (uv_handle_t*)handle, UV_FS_POLL);
   handle->poll_ctx = NULL;
   return 0;
 }
 
-
-int uv_fs_poll_start(uv_fs_poll_t* handle,
-                     uv_fs_poll_cb cb,
-                     const char* path,
-                     unsigned int interval) {
+int uv_fs_poll_start(uv_fs_poll_t* handle, uv_fs_poll_cb cb, const char* path, unsigned int interval) {
   struct poll_ctx* ctx;
   uv_loop_t* loop;
   size_t len;
@@ -112,7 +107,6 @@ error:
   return err;
 }
 
-
 int uv_fs_poll_stop(uv_fs_poll_t* handle) {
   struct poll_ctx* ctx;
 
@@ -133,7 +127,6 @@ int uv_fs_poll_stop(uv_fs_poll_t* handle) {
 
   return 0;
 }
-
 
 int uv_fs_poll_getpath(uv_fs_poll_t* handle, char* buffer, size_t* size) {
   struct poll_ctx* ctx;
@@ -160,14 +153,12 @@ int uv_fs_poll_getpath(uv_fs_poll_t* handle, char* buffer, size_t* size) {
   return 0;
 }
 
-
 void uv__fs_poll_close(uv_fs_poll_t* handle) {
   uv_fs_poll_stop(handle);
 
   if (handle->poll_ctx == NULL)
     uv__make_close_pending((uv_handle_t*)handle);
 }
-
 
 static void timer_cb(uv_timer_t* timer) {
   struct poll_ctx* ctx;
@@ -180,7 +171,6 @@ static void timer_cb(uv_timer_t* timer) {
   if (uv_fs_stat(ctx->loop, &ctx->fs_req, ctx->path, poll_cb))
     abort();
 }
-
 
 static void poll_cb(uv_fs_t* req) {
   uv_stat_t* statbuf;
@@ -196,11 +186,8 @@ static void poll_cb(uv_fs_t* req) {
 
   if (req->result != 0) {
     if (ctx->busy_polling != req->result) {
-      ctx->poll_cb(ctx->parent_handle,
-                   req->result,
-                   &ctx->statbuf,
-                   &zero_statbuf);
-      ctx->busy_polling = req->result;
+      ctx->poll_cb(ctx->parent_handle, (int)req->result, &ctx->statbuf, &zero_statbuf);
+      ctx->busy_polling = (int)req->result;
     }
     goto out;
   }
@@ -230,7 +217,6 @@ out:
     abort();
 }
 
-
 static void timer_close_cb(uv_handle_t* timer) {
   struct poll_ctx* ctx;
   struct poll_ctx* it;
@@ -244,9 +230,7 @@ static void timer_close_cb(uv_handle_t* timer) {
     if (handle->poll_ctx == NULL && uv__is_closing(handle))
       uv__make_close_pending((uv_handle_t*)handle);
   } else {
-    for (last = handle->poll_ctx, it = last->previous;
-         it != ctx;
-         last = it, it = it->previous) {
+    for ((void)(last = handle->poll_ctx), it = last->previous; it != ctx; last = it, it = it->previous) {
       assert(last->previous != NULL);
     }
     last->previous = ctx->previous;
@@ -254,24 +238,13 @@ static void timer_close_cb(uv_handle_t* timer) {
   uv__free(ctx);
 }
 
-
 static int statbuf_eq(const uv_stat_t* a, const uv_stat_t* b) {
-  return a->st_ctim.tv_nsec == b->st_ctim.tv_nsec
-      && a->st_mtim.tv_nsec == b->st_mtim.tv_nsec
-      && a->st_birthtim.tv_nsec == b->st_birthtim.tv_nsec
-      && a->st_ctim.tv_sec == b->st_ctim.tv_sec
-      && a->st_mtim.tv_sec == b->st_mtim.tv_sec
-      && a->st_birthtim.tv_sec == b->st_birthtim.tv_sec
-      && a->st_size == b->st_size
-      && a->st_mode == b->st_mode
-      && a->st_uid == b->st_uid
-      && a->st_gid == b->st_gid
-      && a->st_ino == b->st_ino
-      && a->st_dev == b->st_dev
-      && a->st_flags == b->st_flags
-      && a->st_gen == b->st_gen;
+  return a->st_ctim.tv_nsec == b->st_ctim.tv_nsec && a->st_mtim.tv_nsec == b->st_mtim.tv_nsec &&
+         a->st_birthtim.tv_nsec == b->st_birthtim.tv_nsec && a->st_ctim.tv_sec == b->st_ctim.tv_sec &&
+         a->st_mtim.tv_sec == b->st_mtim.tv_sec && a->st_birthtim.tv_sec == b->st_birthtim.tv_sec &&
+         a->st_size == b->st_size && a->st_mode == b->st_mode && a->st_uid == b->st_uid && a->st_gid == b->st_gid &&
+         a->st_ino == b->st_ino && a->st_dev == b->st_dev && a->st_flags == b->st_flags && a->st_gen == b->st_gen;
 }
-
 
 #if defined(_WIN32)
 

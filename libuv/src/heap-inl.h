@@ -16,12 +16,12 @@
 #ifndef UV_SRC_HEAP_H_
 #define UV_SRC_HEAP_H_
 
-#include <stddef.h>  /* NULL */
+#include <stddef.h> /* NULL */
 
 #if defined(__GNUC__)
-# define HEAP_EXPORT(declaration) __attribute__((unused)) static declaration
+#define HEAP_EXPORT(declaration) __attribute__((unused)) static declaration
 #else
-# define HEAP_EXPORT(declaration) static declaration
+#define HEAP_EXPORT(declaration) static declaration
 #endif
 
 struct heap_node {
@@ -43,18 +43,13 @@ struct heap {
 };
 
 /* Return non-zero if a < b. */
-typedef int (*heap_compare_fn)(const struct heap_node* a,
-                               const struct heap_node* b);
+typedef int (*heap_compare_fn)(const struct heap_node* a, const struct heap_node* b);
 
 /* Public functions. */
 HEAP_EXPORT(void heap_init(struct heap* heap));
 HEAP_EXPORT(struct heap_node* heap_min(const struct heap* heap));
-HEAP_EXPORT(void heap_insert(struct heap* heap,
-                             struct heap_node* newnode,
-                             heap_compare_fn less_than));
-HEAP_EXPORT(void heap_remove(struct heap* heap,
-                             struct heap_node* node,
-                             heap_compare_fn less_than));
+HEAP_EXPORT(void heap_insert(struct heap* heap, struct heap_node* newnode, heap_compare_fn less_than));
+HEAP_EXPORT(void heap_remove(struct heap* heap, struct heap_node* node, heap_compare_fn less_than));
 HEAP_EXPORT(void heap_dequeue(struct heap* heap, heap_compare_fn less_than));
 
 /* Implementation follows. */
@@ -69,9 +64,7 @@ HEAP_EXPORT(struct heap_node* heap_min(const struct heap* heap)) {
 }
 
 /* Swap parent with child. Child moves closer to the root, parent moves away. */
-static void heap_node_swap(struct heap* heap,
-                           struct heap_node* parent,
-                           struct heap_node* child) {
+static void heap_node_swap(struct heap* heap, struct heap_node* parent, struct heap_node* child) {
   struct heap_node* sibling;
   struct heap_node t;
 
@@ -103,9 +96,7 @@ static void heap_node_swap(struct heap* heap,
     child->parent->right = child;
 }
 
-HEAP_EXPORT(void heap_insert(struct heap* heap,
-                             struct heap_node* newnode,
-                             heap_compare_fn less_than)) {
+HEAP_EXPORT(void heap_insert(struct heap* heap, struct heap_node* newnode, heap_compare_fn less_than)) {
   struct heap_node** parent;
   struct heap_node** child;
   unsigned int path;
@@ -121,7 +112,7 @@ HEAP_EXPORT(void heap_insert(struct heap* heap,
    */
   // all left node indexes are even, all right node indexes are odd
   path = 0;
-  for (k = 0, n = 1 + heap->nelts; n >= 2; k += 1, n /= 2)
+  for ((void)(k = 0), n = 1 + heap->nelts; n >= 2; k += 1, n /= 2)
     path = (path << 1) | (n & 1);
 
   /* Now traverse the heap using the path we calculated in the previous step. */
@@ -148,9 +139,7 @@ HEAP_EXPORT(void heap_insert(struct heap* heap,
     heap_node_swap(heap, newnode->parent, newnode);
 }
 
-HEAP_EXPORT(void heap_remove(struct heap* heap,
-                             struct heap_node* node,
-                             heap_compare_fn less_than)) {
+HEAP_EXPORT(void heap_remove(struct heap* heap, struct heap_node* node, heap_compare_fn less_than)) {
   struct heap_node* smallest;
   struct heap_node** max;
   struct heap_node* child;
@@ -165,7 +154,7 @@ HEAP_EXPORT(void heap_remove(struct heap* heap,
    * of the bottom row.
    */
   path = 0;
-  for (k = 0, n = heap->nelts; n >= 2; k += 1, n /= 2)
+  for ((void)(k = 0), n = heap->nelts; n >= 2; k += 1, n /= 2)
     path = (path << 1) | (n & 1);
 
   /* Now traverse the heap using the path we calculated in the previous step. */
@@ -243,4 +232,4 @@ HEAP_EXPORT(void heap_dequeue(struct heap* heap, heap_compare_fn less_than)) {
 
 #undef HEAP_EXPORT
 
-#endif  /* UV_SRC_HEAP_H_ */
+#endif /* UV_SRC_HEAP_H_ */

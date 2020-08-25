@@ -21,9 +21,7 @@
 #include "idna.h"
 #include <string.h>
 
-static unsigned uv__utf8_decode1_slow(const char** p,
-                                      const char* pe,
-                                      unsigned a) {
+static unsigned uv__utf8_decode1_slow(const char** p, const char* pe, unsigned a) {
   unsigned b;
   unsigned c;
   unsigned d;
@@ -33,40 +31,40 @@ static unsigned uv__utf8_decode1_slow(const char** p,
     return -1;
 
   switch (*p - pe) {
-  default:
-    if (a > 0xEF) {
-      min = 0x10000;
-      a = a & 7;
-      b = (unsigned char) *(*p)++;
-      c = (unsigned char) *(*p)++;
-      d = (unsigned char) *(*p)++;
-      break;
-    }
-    /* Fall through. */
-  case 2:
-    if (a > 0xDF) {
-      min = 0x800;
-      b = 0x80 | (a & 15);
-      c = (unsigned char) *(*p)++;
-      d = (unsigned char) *(*p)++;
-      a = 0;
-      break;
-    }
-    /* Fall through. */
-  case 1:
-    if (a > 0xBF) {
-      min = 0x80;
-      b = 0x80;
-      c = 0x80 | (a & 31);
-      d = (unsigned char) *(*p)++;
-      a = 0;
-      break;
-    }
-    return -1;  /* Invalid continuation byte. */
+    default:
+      if (a > 0xEF) {
+        min = 0x10000;
+        a = a & 7;
+        b = (unsigned char)*(*p)++;
+        c = (unsigned char)*(*p)++;
+        d = (unsigned char)*(*p)++;
+        break;
+      }
+      /* Fall through. */
+    case 2:
+      if (a > 0xDF) {
+        min = 0x800;
+        b = 0x80 | (a & 15);
+        c = (unsigned char)*(*p)++;
+        d = (unsigned char)*(*p)++;
+        a = 0;
+        break;
+      }
+      /* Fall through. */
+    case 1:
+      if (a > 0xBF) {
+        min = 0x80;
+        b = 0x80;
+        c = 0x80 | (a & 31);
+        d = (unsigned char)*(*p)++;
+        a = 0;
+        break;
+      }
+      return -1; /* Invalid continuation byte. */
   }
 
   if (0x80 != (0xC0 & (b ^ c ^ d)))
-    return -1;  /* Invalid sequence. */
+    return -1; /* Invalid sequence. */
 
   b &= 63;
   c &= 63;
@@ -74,13 +72,13 @@ static unsigned uv__utf8_decode1_slow(const char** p,
   a = (a << 18) | (b << 12) | (c << 6) | d;
 
   if (a < min)
-    return -1;  /* Overlong sequence. */
+    return -1; /* Overlong sequence. */
 
   if (a > 0x10FFFF)
-    return -1;  /* Four-byte sequence > U+10FFFF. */
+    return -1; /* Four-byte sequence > U+10FFFF. */
 
   if (a >= 0xD800 && a <= 0xDFFF)
-    return -1;  /* Surrogate pair. */
+    return -1; /* Surrogate pair. */
 
   return a;
 }
@@ -88,22 +86,20 @@ static unsigned uv__utf8_decode1_slow(const char** p,
 unsigned uv__utf8_decode1(const char** p, const char* pe) {
   unsigned a;
 
-  a = (unsigned char) *(*p)++;
+  a = (unsigned char)*(*p)++;
 
   if (a < 128)
-    return a;  /* ASCII, common case. */
+    return a; /* ASCII, common case. */
 
   return uv__utf8_decode1_slow(p, pe, a);
 }
 
-#define foreach_codepoint(c, p, pe) \
-  for (; (void) (*p <= pe && (c = uv__utf8_decode1(p, pe))), *p <= pe;)
+#define foreach_codepoint(c, p, pe) for (; (void)(*p <= pe && (c = uv__utf8_decode1(p, pe))), *p <= pe;)
 
-static int uv__idna_toascii_label(const char* s, const char* se,
-                                  char** d, char* de) {
+static int uv__idna_toascii_label(const char* s, const char* se, char** d, char* de) {
   static const char alphabet[] = "abcdefghijklmnopqrstuvwxyz0123456789";
   const char* ss;
-  unsigned c;
+  unsigned c = 0;
   unsigned h;
   unsigned k;
   unsigned n;
@@ -124,17 +120,21 @@ static int uv__idna_toascii_label(const char* s, const char* se,
   foreach_codepoint(c, &s, se) {
     if (c < 128)
       h++;
-    else if (c == (unsigned) -1)
+    else if (c == (unsigned)-1)
       return UV_EINVAL;
     else
       todo++;
   }
 
   if (todo > 0) {
-    if (*d < de) *(*d)++ = 'x';
-    if (*d < de) *(*d)++ = 'n';
-    if (*d < de) *(*d)++ = '-';
-    if (*d < de) *(*d)++ = '-';
+    if (*d < de)
+      *(*d)++ = 'x';
+    if (*d < de)
+      *(*d)++ = 'n';
+    if (*d < de)
+      *(*d)++ = '-';
+    if (*d < de)
+      *(*d)++ = '-';
   }
 
   x = 0;
@@ -147,7 +147,7 @@ static int uv__idna_toascii_label(const char* s, const char* se,
       *(*d)++ = c;
 
     if (++x == h)
-      break;  /* Visited all ASCII characters. */
+      break; /* Visited all ASCII characters. */
   }
 
   if (todo == 0)
@@ -166,16 +166,13 @@ static int uv__idna_toascii_label(const char* s, const char* se,
   while (todo > 0) {
     m = -1;
     s = ss;
-    foreach_codepoint(c, &s, se)
-      if (c >= n)
-        if (c < m)
-          m = c;
+    foreach_codepoint(c, &s, se) if (c >= n) if (c < m) m = c;
 
     x = m - n;
     y = h + 1;
 
     if (x > ~delta / y)
-      return UV_E2BIG;  /* Overflow. */
+      return UV_E2BIG; /* Overflow. */
 
     delta += x * y;
     n = m;
@@ -184,12 +181,12 @@ static int uv__idna_toascii_label(const char* s, const char* se,
     foreach_codepoint(c, &s, se) {
       if (c < n)
         if (++delta == 0)
-          return UV_E2BIG;  /* Overflow. */
+          return UV_E2BIG; /* Overflow. */
 
       if (c != n)
         continue;
 
-      for (k = 36, q = delta; /* empty */; k += 36) {
+      for ((void)(k = 36), q = delta; /* empty */; k += 36) {
         t = 1;
 
         if (k > bias)
@@ -206,9 +203,9 @@ static int uv__idna_toascii_label(const char* s, const char* se,
          * into a table-based reciprocal multiplication.
          */
         x = q - t;
-        y = 36 - t;  /* 10 <= y <= 35 since 1 <= t <= 26. */
+        y = 36 - t; /* 10 <= y <= 35 since 1 <= t <= 26. */
         q = x / y;
-        t = t + x % y;  /* 1 <= t <= 35 because of y. */
+        t = t + x % y; /* 1 <= t <= 35 because of y. */
 
         if (*d < de)
           *(*d)++ = alphabet[t];
@@ -261,9 +258,9 @@ long uv__idna_toascii(const char* s, const char* se, char* d, char* de) {
     c = uv__utf8_decode1(&si, se);
 
     if (c != '.')
-      if (c != 0x3002)  /* 。 */
-        if (c != 0xFF0E)  /* ． */
-          if (c != 0xFF61)  /* ｡ */
+      if (c != 0x3002) /* 。 */
+        if (c != 0xFF0E) /* ． */
+          if (c != 0xFF61) /* ｡ */
             continue;
 
     rc = uv__idna_toascii_label(s, st, &d, de);
@@ -287,5 +284,5 @@ long uv__idna_toascii(const char* s, const char* se, char* d, char* de) {
   if (d < de)
     *d++ = '\0';
 
-  return d - ds;  /* Number of bytes written. */
+  return d - ds; /* Number of bytes written. */
 }

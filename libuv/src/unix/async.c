@@ -27,7 +27,7 @@
 #include "atomic-ops.h"
 
 #include <errno.h>
-#include <stdio.h>  /* snprintf() */
+#include <stdio.h> /* snprintf() */
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,7 +36,6 @@
 static void uv__async_send(uv_loop_t* loop);
 static int uv__async_start(uv_loop_t* loop);
 static int uv__async_eventfd(void);
-
 
 int uv_async_init(uv_loop_t* loop, uv_async_t* handle, uv_async_cb async_cb) {
   int err;
@@ -54,7 +53,6 @@ int uv_async_init(uv_loop_t* loop, uv_async_t* handle, uv_async_cb async_cb) {
 
   return 0;
 }
-
 
 int uv_async_send(uv_async_t* handle) {
   /* Do a cheap read first. */
@@ -75,7 +73,6 @@ int uv_async_send(uv_async_t* handle) {
   return 0;
 }
 
-
 /* Only call this from the event loop thread. */
 static int uv__async_spin(uv_async_t* handle) {
   int rc;
@@ -95,13 +92,11 @@ static int uv__async_spin(uv_async_t* handle) {
   }
 }
 
-
 void uv__async_close(uv_async_t* handle) {
   uv__async_spin(handle);
   QUEUE_REMOVE(&handle->queue);
   uv__handle_stop(handle);
 }
-
 
 static void uv__async_io(uv_loop_t* loop, uv__io_t* w, unsigned int events) {
   char buf[1024];
@@ -139,7 +134,7 @@ static void uv__async_io(uv_loop_t* loop, uv__io_t* w, unsigned int events) {
     QUEUE_INSERT_TAIL(&loop->async_handles, q);
 
     if (0 == uv__async_spin(h))
-      continue;  /* Not pending. */
+      continue; /* Not pending. */
 
     if (h->async_cb == NULL)
       continue;
@@ -147,7 +142,6 @@ static void uv__async_io(uv_loop_t* loop, uv__io_t* w, unsigned int events) {
     h->async_cb(h);
   }
 }
-
 
 static void uv__async_send(uv_loop_t* loop) {
   const void* buf;
@@ -164,12 +158,12 @@ static void uv__async_send(uv_loop_t* loop) {
     static const uint64_t val = 1;
     buf = &val;
     len = sizeof(val);
-    fd = loop->async_io_watcher.fd;  /* eventfd */
+    fd = loop->async_io_watcher.fd; /* eventfd */
   }
 #endif
 
   do
-    r = write(fd, buf, len);
+    r = (int)write(fd, buf, len);
   while (r == -1 && errno == EINTR);
 
   if (r == len)
@@ -182,7 +176,6 @@ static void uv__async_send(uv_loop_t* loop) {
   abort();
 }
 
-
 static int uv__async_start(uv_loop_t* loop) {
   int pipefd[2];
   int err;
@@ -194,8 +187,7 @@ static int uv__async_start(uv_loop_t* loop) {
   if (err >= 0) {
     pipefd[0] = err;
     pipefd[1] = -1;
-  }
-  else if (err == UV_ENOSYS) {
+  } else if (err == UV_ENOSYS) {
     err = uv__make_pipe(pipefd, UV__F_NONBLOCK);
 #if defined(__linux__)
     /* Save a file descriptor by opening one of the pipe descriptors as
@@ -228,7 +220,6 @@ static int uv__async_start(uv_loop_t* loop) {
   return 0;
 }
 
-
 int uv__async_fork(uv_loop_t* loop) {
   if (loop->async_io_watcher.fd == -1) /* never started */
     return 0;
@@ -237,7 +228,6 @@ int uv__async_fork(uv_loop_t* loop) {
 
   return uv__async_start(loop);
 }
-
 
 void uv__async_stop(uv_loop_t* loop) {
   if (loop->async_io_watcher.fd == -1)
@@ -253,7 +243,6 @@ void uv__async_stop(uv_loop_t* loop) {
   uv__close(loop->async_io_watcher.fd);
   loop->async_io_watcher.fd = -1;
 }
-
 
 static int uv__async_eventfd(void) {
 #if defined(__linux__)
