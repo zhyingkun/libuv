@@ -3,3 +3,12 @@ build
 buildXcode
 buildVS
 .vscode
+
+project.xcworkspace
+xcuserdata
+xcshareddata
+UserInterfaceState.xcuserstate
+UserInterface.xcuserstate
+
+libuv/Android/obj
+libuv/Android/libs
