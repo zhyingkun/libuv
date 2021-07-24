@@ -136,6 +136,7 @@ static void start_client_tcp() {
   uv_tcp_init(loop, client);
   struct sockaddr_in addr[1];
   uv_ip4_addr("0.0.0.0", 1024, addr);
+  // uv_ip4_addr("192.168.31.4", 1024, addr);
   uv_connect_t* tcp_connect = (uv_connect_t*)stick_malloc(sizeof(uv_connect_t));
 
   uv_tcp_connect(tcp_connect, client, (const struct sockaddr*)addr, tcp_connect_cb);
@@ -187,8 +188,8 @@ static void start_client_udp() {
 
   struct sockaddr_in send_addr[1];
   uv_ip4_addr("127.0.0.1", 1025, send_addr);
-  //    uv_ip4_addr("10.45.55.39", 1025, &send_addr);
-  //    uv_ip4_addr("255.255.255.255", 1025, &send_addr);
+  // uv_ip4_addr("192.168.31.4", 1025, &send_addr);
+  // uv_ip4_addr("255.255.255.255", 1025, &send_addr);
   uv_udp_send(send_req, send_socket, udp_buf, 1, (const struct sockaddr*)send_addr, udp_on_send);
   uv_udp_send(send_req1, send_socket, udp_buf, 2, (const struct sockaddr*)send_addr, udp_on_send);
   char* long_data = (char*)stick_malloc(66 * 1024 + 1);
@@ -196,7 +197,7 @@ static void start_client_udp() {
   for (i = 0; i < 1024; i++) {
     memcpy(long_data + i * 66, data, 66);
   }
-  size_t msg_size = 9; // error on 9217
+  size_t msg_size = 9; // Max Message Size: MacOSX => 9216, Linux and Windows => 65507
   long_data[msg_size] = '\0';
   udp_buf1[0].base = long_data;
   udp_buf1[0].len = msg_size;
