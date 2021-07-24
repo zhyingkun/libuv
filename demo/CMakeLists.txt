@@ -27,14 +27,19 @@ endif()
 
 include_directories(../libuv/include)
 
-aux_source_directory(./queue QUEUE_SRC)
-source_group(src FILES ${QUEUE_SRC})
-add_executable(queue ${QUEUE_SRC})
-target_include_directories(queue PRIVATE ../libuv/src)
-# target_link_libraries(queue libuv)
-set_target_properties(queue PROPERTIES
-	FOLDER "demo"
-	INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib)
+set(DEMO_NAMES queue stick)
+
+foreach(DEMO ${DEMO_NAMES})
+	set(DEMO_SRC)
+	aux_source_directory(./${DEMO} DEMO_SRC)
+	source_group(src FILES ${DEMO_SRC})
+	add_executable(${DEMO} ${DEMO_SRC})
+	set_target_properties(${DEMO} PROPERTIES FOLDER "demo")
+	target_link_libraries(${DEMO} libuv)
+	if(${DEMO} STREQUAL queue)
+		target_include_directories(${DEMO} PRIVATE ../libuv/src)
+	endif()
+endforeach(DEMO)
 
 # install(TARGETS ${PROJECT_NAME}
 # 	RUNTIME DESTINATION bin
