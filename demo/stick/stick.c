@@ -103,7 +103,7 @@ static void start_server() {
 char* data = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrlsuvwxyz====";
 static uv_buf_t buf[1];
 
-static tcp_count = 0;
+static int tcp_count = 0;
 static void tcp_on_write(uv_write_t* req, int status) {
   printf("tcp_on_write: %d\n", status);
   tcp_count++;
